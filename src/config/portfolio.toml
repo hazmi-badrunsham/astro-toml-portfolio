@@ -4,7 +4,7 @@ title = "Application Support Engineer"
 bio = "Specializing in software support, SQL debugging, system permissions, and building internal automation tools."
 
 [about]
-avatar = "/avatar.jpeg"
+avatar = "/avatar.jpg"
 description = "Application Support Intern focusing on automated workflows, database query optimization, and integration scripts. Experienced with JavaScript, SQL, and API integrations."
 
 [[skills]]
