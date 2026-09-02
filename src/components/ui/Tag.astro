@@ -1,0 +1,19 @@
+---
+interface Props {
+  label: string;
+}
+const { label } = Astro.props;
+---
+<span class="ui-tag">{label}</span>
+
+<style>
+  .ui-tag {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.8125rem;
+    background-color: var(--color-surface);
+    color: var(--color-muted);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--border-radius);
+  }
+</style>

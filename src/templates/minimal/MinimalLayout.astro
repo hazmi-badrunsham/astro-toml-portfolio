@@ -1,0 +1,30 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import Container from '../../components/ui/Container.astro';
+import Hero from '../../components/sections/Hero.astro';
+import About from '../../components/sections/About.astro';
+import Skills from '../../components/sections/Skills.astro';
+import Experience from '../../components/sections/Experience.astro';
+import Projects from '../../components/sections/Projects.astro';
+import Contact from '../../components/sections/Contact.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+}
+
+const { data } = Astro.props;
+---
+
+<div class="minimal-layout">
+  <Container>
+    <main class="minimal-main">
+      <Hero data={data.site} />
+      <About data={data.about} />
+      <Skills data={data.skills} />
+      <Experience data={data.experience} />
+      <Projects data={data.projects} />
+      <Contact data={data.contact} />
+    </main>
+  </Container>
+</div>

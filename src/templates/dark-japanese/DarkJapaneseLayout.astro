@@ -1,0 +1,52 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import Container from '../../components/ui/Container.astro';
+import Hero from '../../components/sections/Hero.astro';
+import About from '../../components/sections/About.astro';
+import Skills from '../../components/sections/Skills.astro';
+import Experience from '../../components/sections/Experience.astro';
+import Projects from '../../components/sections/Projects.astro';
+import Contact from '../../components/sections/Contact.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+}
+
+const { data } = Astro.props;
+---
+
+<div class="japanese-layout">
+  <!-- Subtle decorative Hanko / Japanese stamp accent element -->
+  <div class="hanko-seal" aria-hidden="true">ポートフォリオ</div>
+
+  <Container>
+    <div class="japanese-frame">
+      <header class="japanese-hero-wrapper">
+        <Hero data={data.site} />
+      </header>
+
+      <main class="japanese-main">
+        <div class="japanese-section-wrapper">
+          <About data={data.about} />
+        </div>
+
+        <div class="japanese-section-wrapper">
+          <Skills data={data.skills} />
+        </div>
+
+        <div class="japanese-section-wrapper">
+          <Experience data={data.experience} />
+        </div>
+
+        <div class="japanese-section-wrapper">
+          <Projects data={data.projects} />
+        </div>
+
+        <div class="japanese-section-wrapper">
+          <Contact data={data.contact} />
+        </div>
+      </main>
+    </div>
+  </Container>
+</div>

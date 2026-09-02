@@ -1,0 +1,36 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+
+interface Props {
+  data: PortfolioData['contact'];
+}
+const { data } = Astro.props;
+---
+<section class="section-contact">
+  <SectionTitle title="Contact" />
+  <p class="contact-email">
+    Email: <a href={`mailto:${data.email}`}>{data.email}</a>
+  </p>
+  <div class="contact-socials">
+    {data.socials.map((s) => (
+      <a href={s.url} target="_blank" rel="noopener noreferrer" class="social-link">
+        {s.name}
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-contact {
+    margin-bottom: var(--spacing-section);
+  }
+  .contact-email {
+    font-size: 1.05rem;
+    margin-bottom: 1rem;
+  }
+  .contact-socials {
+    display: flex;
+    gap: var(--spacing-gap);
+  }
+</style>

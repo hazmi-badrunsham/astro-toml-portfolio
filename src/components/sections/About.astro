@@ -1,0 +1,51 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+
+interface Props {
+  data: PortfolioData['about'];
+}
+const { data } = Astro.props;
+---
+<section class="section-about">
+  <SectionTitle title="About" />
+  <div class="about-content">
+    {data.avatar && (
+      <img 
+        src={data.avatar} 
+        alt="Profile photo" 
+        class="about-avatar" 
+        loading="eager"
+      />
+    )}
+    <p class="about-description">{data.description}</p>
+  </div>
+</section>
+
+<style>
+  .section-about {
+    margin-bottom: var(--spacing-section);
+  }
+  .about-content {
+    display: flex;
+    gap: var(--spacing-gap);
+    align-items: flex-start;
+  }
+  .about-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: var(--border-radius);
+    object-fit: cover;
+    border: var(--border-width) solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .about-description {
+    color: var(--color-foreground);
+    line-height: 1.6;
+  }
+  @media (max-width: 640px) {
+    .about-content {
+      flex-direction: column;
+    }
+  }
+</style>

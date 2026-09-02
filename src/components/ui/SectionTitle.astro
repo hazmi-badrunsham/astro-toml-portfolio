@@ -1,0 +1,17 @@
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<h2 class="ui-section-title">{title}</h2>
+
+<style>
+  .ui-section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-gap);
+    border-bottom: var(--border-width) solid var(--color-border);
+    padding-bottom: 0.5rem;
+  }
+</style>

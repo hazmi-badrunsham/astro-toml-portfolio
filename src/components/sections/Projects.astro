@@ -1,0 +1,58 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+import Tag from '../ui/Tag.astro';
+
+interface Props {
+  data: PortfolioData['projects'];
+}
+const { data } = Astro.props;
+---
+<section class="section-projects">
+  <SectionTitle title="Projects" />
+  <div class="projects-list">
+    {data.map((project) => (
+      <article class="project-card">
+        <div class="project-header">
+          <h3 class="project-name">{project.name}</h3>
+          {project.link && (
+            <a href={project.link} target="_blank" rel="noopener noreferrer" class="project-link">
+              View &rarr;
+            </a>
+          )}
+        </div>
+        <p class="project-description">{project.description}</p>
+        <div class="project-tags">
+          {project.tags.map((tag) => <Tag label={tag} />)}
+        </div>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-projects {
+    margin-bottom: var(--spacing-section);
+  }
+  .projects-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gap);
+  }
+  .project-card {
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--panel-shadow);
+  }
+  .project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .project-name { font-size: 1.1rem; font-weight: 600; }
+  .project-description { font-size: 0.95rem; color: var(--color-muted); }
+  .project-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+</style>

@@ -1,0 +1,46 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+import Tag from '../ui/Tag.astro';
+
+interface Props {
+  data: PortfolioData['skills'];
+}
+const { data } = Astro.props;
+---
+<section class="section-skills">
+  <SectionTitle title="Skills & Tools" />
+  <div class="skills-grid">
+    {data.map((group) => (
+      <div class="skill-group">
+        <h3 class="skill-category">{group.category}</h3>
+        <div class="skill-items">
+          {group.items.map((item) => (
+            <Tag label={item} />
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-skills {
+    margin-bottom: var(--spacing-section);
+  }
+  .skills-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gap);
+  }
+  .skill-category {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .skill-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+</style>

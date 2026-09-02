@@ -1,0 +1,1 @@
+export type { SiteConfig, ThemeConfig, PortfolioData } from '../lib/schema';

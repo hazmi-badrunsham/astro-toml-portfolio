@@ -12,9 +12,14 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.2.10"
+    "@iarna/toml": "^2.2.5",
+    "astro": "^7.2.10",
+    "zod": "^4.5.4"
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@types/iarna__toml": "^2.0.5"
   }
 }

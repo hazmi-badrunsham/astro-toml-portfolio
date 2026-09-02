@@ -1,17 +1,31 @@
 ---
+import { getPortfolioData, getThemeConfig, getSiteConfig } from '../lib/config';
+import { generateCssVariables } from '../lib/tokens';
+import { TEMPLATES } from '../lib/template';
+import type { TemplateKey } from '../lib/template';
+import '../styles/reset.css';
+import '../styles/global.css';
 
+const portfolio = getPortfolioData();
+const theme = getThemeConfig();
+const site = getSiteConfig();
+
+const cssVariables = generateCssVariables(theme);
+
+// Fallback to 'minimal' if requested template is invalid
+const templateKey = (site.template in TEMPLATES ? site.template : 'minimal') as TemplateKey;
+const SelectedTemplate = TEMPLATES[templateKey];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+<!DOCTYPE html>
+<html lang={site.language}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{portfolio.site.name} — {portfolio.site.title}</title>
+    <style set:html={`:root { ${cssVariables} }`}></style>
+  </head>
+  <body>
+    <SelectedTemplate data={portfolio} />
+  </body>
 </html>

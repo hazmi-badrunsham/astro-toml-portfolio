@@ -1,0 +1,80 @@
+/* Dark Japanese Aesthetic Styles */
+
+.japanese-layout {
+  position: relative;
+  min-height: 100vh;
+  padding-block: var(--spacing-section);
+  overflow-x: hidden;
+}
+
+/* Background atmospheric subtle grid pattern */
+.japanese-layout::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+                    linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Traditional Red/Accent Hanko Seal (top right corner decor) */
+.hanko-seal {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  writing-mode: vertical-rl;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  color: var(--color-accent);
+  border: var(--border-width) solid var(--color-accent);
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--border-radius);
+  opacity: 0.7;
+  user-select: none;
+}
+
+/* Central frame with minimalist Japanese borders */
+.japanese-frame {
+  position: relative;
+  z-index: 1;
+  border-left: calc(var(--border-width) * 2) solid var(--color-accent);
+  padding-left: var(--spacing-container);
+}
+
+.japanese-hero-wrapper {
+  position: relative;
+  margin-bottom: calc(var(--spacing-section) * 1.25);
+  padding-bottom: var(--spacing-gap);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.japanese-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-section);
+}
+
+/* Minimalist section cards with clean hover state */
+.japanese-section-wrapper {
+  position: relative;
+  transition: transform var(--transition-normal);
+}
+
+.japanese-section-wrapper:hover {
+  transform: translateX(4px);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .hanko-seal {
+    display: none;
+  }
+  
+  .japanese-frame {
+    padding-left: calc(var(--spacing-container) / 2);
+  }
+}

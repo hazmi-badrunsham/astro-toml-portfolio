@@ -1,0 +1,65 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+
+interface Props {
+  data: PortfolioData['experience'];
+}
+const { data } = Astro.props;
+---
+<section class="section-experience">
+  <SectionTitle title="Work Experience" />
+  <div class="experience-list">
+    {data.map((item) => (
+      <article class="experience-card">
+        <div class="experience-header">
+          <div>
+            <h3 class="role">{item.role}</h3>
+            <p class="company">{item.company}</p>
+          </div>
+          <span class="period">{item.period}</span>
+        </div>
+        <p class="description">{item.description}</p>
+        {item.highlights && item.highlights.length > 0 && (
+          <ul class="highlights">
+            {item.highlights.map((h) => <li>{h}</li>)}
+          </ul>
+        )}
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-experience {
+    margin-bottom: var(--spacing-section);
+  }
+  .experience-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gap);
+  }
+  .experience-card {
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--panel-shadow);
+  }
+  .experience-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+  .role { font-size: 1.1rem; font-weight: 600; }
+  .company { color: var(--color-accent); font-size: 0.95rem; }
+  .period { color: var(--color-muted); font-size: 0.875rem; }
+  .description { margin-top: 0.5rem; font-size: 0.95rem; }
+  .highlights {
+    margin-top: 0.5rem;
+    padding-left: 1.25rem;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+  }
+</style>

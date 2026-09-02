@@ -1,0 +1,54 @@
+[site]
+name = "Hazmi"
+title = "Application Support Engineer"
+bio = "Specializing in software support, SQL debugging, system permissions, and building internal automation tools."
+
+[about]
+avatar = "/avatar.jpeg"
+description = "Application Support Intern focusing on automated workflows, database query optimization, and integration scripts. Experienced with JavaScript, SQL, and API integrations."
+
+[[skills]]
+category = "Languages & Web"
+items = ["JavaScript", "SQL", "HTML/CSS", "TypeScript"]
+
+[[skills]]
+category = "Tools & Infrastructure"
+items = ["GitLab API", "PostgreSQL", "Linux", "Docker", "REST APIs"]
+
+[[skills]]
+category = "Focus Areas"
+items = ["Internal Automation", "Permission Control", "Log Translation"]
+
+[[experience]]
+role = "Application Support Intern"
+company = "Datum Clearmind SDN BHD"
+period = "2026 - Present"
+description = "Developed automated notification systems, log translation tools, and permission security updates across internal platforms."
+highlights = [
+  "Implemented automated Internship Completion Alert system with custom SQL & HTML templates",
+  "Built Portal Reply Banner system for automated email notifications",
+  "Documented and tested system permission updates (ORDR:ECS) for access control security"
+]
+
+[[projects]]
+name = "GitLab Sync Action"
+description = "Custom automation tool built with GitLab API to sync issue data, titles, and descriptions into internal systems seamlessly."
+tags = ["JavaScript", "GitLab API", "Automation"]
+link = "https://github.com"
+
+[[projects]]
+name = "Config-Driven Portfolio Engine"
+description = "Headless, TOML-powered portfolio template engine built with Astro and TypeScript."
+tags = ["Astro", "TypeScript", "TOML"]
+link = "https://github.com"
+
+[contact]
+email = "hazmi@example.com"
+
+[[contact.socials]]
+name = "GitHub"
+url = "https://github.com"
+
+[[contact.socials]]
+name = "LinkedIn"
+url = "https://linkedin.com"

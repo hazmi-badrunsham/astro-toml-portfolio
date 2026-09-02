@@ -1,0 +1,54 @@
+---
+import type { PortfolioData } from '../../lib/schema';
+import Container from '../../components/ui/Container.astro';
+import Hero from '../../components/sections/Hero.astro';
+import About from '../../components/sections/About.astro';
+import Skills from '../../components/sections/Skills.astro';
+import Experience from '../../components/sections/Experience.astro';
+import Projects from '../../components/sections/Projects.astro';
+import Contact from '../../components/sections/Contact.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+}
+
+const { data } = Astro.props;
+---
+
+<div class="khakis-retro-layout">
+  <Container>
+    <div class="vintage-paper-container">
+      <!-- 90s Catalog Header Stamp -->
+      <div class="retro-badge" aria-hidden="true">
+        EST. 1990 • CLASSIC EDITION
+      </div>
+
+      <header class="retro-hero-card">
+        <Hero data={data.site} />
+      </header>
+
+      <main class="retro-main-stack">
+        <section class="retro-card">
+          <About data={data.about} />
+        </section>
+
+        <section class="retro-card">
+          <Skills data={data.skills} />
+        </section>
+
+        <section class="retro-card">
+          <Experience data={data.experience} />
+        </section>
+
+        <section class="retro-card">
+          <Projects data={data.projects} />
+        </section>
+
+        <section class="retro-card">
+          <Contact data={data.contact} />
+        </section>
+      </main>
+    </div>
+  </Container>
+</div>
