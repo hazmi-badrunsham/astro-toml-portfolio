@@ -1,0 +1,111 @@
+/* Editorial — newspaper / magazine layout */
+
+.editorial-layout {
+  padding-block: var(--spacing-section);
+}
+
+.editorial-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.editorial-dateline {
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  letter-spacing: var(--letter-spacing-body);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Masthead with a newspaper double-rule underline */
+.editorial-masthead {
+  border-bottom: var(--border-width) solid var(--color-border);
+  box-shadow: 0 calc(var(--border-width) * 2) 0 var(--color-border);
+  padding-bottom: var(--spacing-gap);
+  padding-top: var(--spacing-gap);
+  text-align: center;
+}
+
+.editorial-masthead .hero-name {
+  font-family: var(--font-heading);
+  letter-spacing: var(--letter-spacing-heading);
+  text-transform: uppercase;
+}
+
+.editorial-masthead-name {
+  font-family: var(--font-heading);
+  letter-spacing: var(--letter-spacing-heading);
+  text-transform: uppercase;
+}
+
+.editorial-masthead-subtitle {
+  color: var(--color-muted);
+}
+
+.editorial-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gap);
+}
+
+/* About: newspaper multi-column text */
+.editorial-block-about .about-description {
+  column-count: 2;
+  column-gap: var(--spacing-gap);
+}
+
+/* Experience: two-column magazine grid with rule-topped cards */
+.editorial-block-experience .experience-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-gap);
+}
+
+.editorial-block-experience .experience-card {
+  background-color: transparent;
+  border: 0;
+  border-top: calc(var(--border-width) * 2) solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--spacing-container);
+}
+
+.editorial-block-experience .role {
+  letter-spacing: var(--letter-spacing-heading);
+  text-transform: uppercase;
+}
+
+/* Projects: magazine cards in a two-column grid */
+.editorial-block-projects .projects-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-gap);
+}
+
+.editorial-block-projects .project-card {
+  background-color: transparent;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  padding: var(--spacing-container);
+}
+
+/* Contact: classified-style box */
+.editorial-block-contact {
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--panel-shadow);
+  padding: var(--spacing-container);
+}
+
+@media (max-width: 640px) {
+  .editorial-block-about .about-description {
+    column-count: 1;
+  }
+
+  .editorial-block-experience .experience-list,
+  .editorial-block-projects .projects-list {
+    grid-template-columns: 1fr;
+  }
+}

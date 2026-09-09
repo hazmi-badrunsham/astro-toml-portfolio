@@ -1,0 +1,67 @@
+---
+// Blog section component - rendered as part of the shared section system.
+// When blog is enabled, this shows recent posts. When disabled, nothing renders.
+import type { BlogPost } from '../../lib/config';
+import Container from '../../components/ui/Container.astro';
+import SectionTitle from '../../components/ui/SectionTitle.astro';
+import Tag from '../../components/ui/Tag.astro';
+
+interface Props {
+  posts?: BlogPost[];
+  title?: string;
+  description?: string;
+  postsPerPage?: number;
+}
+
+const { posts = [], title = 'Blog', description = '', postsPerPage = 10 } = Astro.props;
+---
+
+{posts.length === 0 ? null : (
+  <section class="blog-section" id="blog">
+    <Container>
+      <SectionTitle title={title} />
+      {description && <p>{description}</p>}
+      <ul>
+        {posts.slice(0, postsPerPage).map((post) => (
+          <article>
+            <h3>
+              <a href={`/blog/${post.id.split('/').pop()!.replace(/\.md$/, '')}/`}>{post.data.title}</a>
+            </h3>
+            {post.data.description && <p>{post.data.description}</p>}
+            {post.data.tags && post.data.tags.length > 0 && (
+              <div>
+                {post.data.tags.map((t) => (
+                  <Tag label={t} />
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
+      </ul>
+      <a href="/blog/">View all posts</a>
+      <style>
+        .blog-section {
+          margin-top: var(--spacing-section);
+        }
+        .blog-section article {
+          padding: var(--spacing-gap);
+          border-top: var(--border-width) solid var(--color-border);
+        }
+        .blog-section h3 {
+          margin: 0 0 0.25rem;
+        }
+        .blog-section h3 a {
+          text-decoration: none;
+          color: var(--color-foreground);
+        }
+        .blog-section h3 a:hover {
+          text-decoration: underline;
+        }
+        .blog-section a[href$='/blog/'] {
+          margin-top: var(--spacing-gap);
+          display: inline-block;
+        }
+      </style>
+    </Container>
+  </section>
+)}

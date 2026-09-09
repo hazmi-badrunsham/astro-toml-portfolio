@@ -1,0 +1,72 @@
+/* Bento Grid — dashboard-style card layout */
+
+.bento-layout {
+  padding-block: var(--spacing-section);
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--spacing-gap);
+  align-items: stretch;
+}
+
+.bento-tile {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--panel-shadow);
+  padding: var(--spacing-container);
+  transition:
+    transform var(--transition-duration) var(--transition-easing),
+    box-shadow var(--transition-duration) var(--transition-easing);
+}
+
+.bento-tile:hover {
+  transform: translateY(calc(-1 * var(--radius-sm)));
+}
+
+/* Full-width banner tile */
+.bento-tile-hero {
+  grid-column: span 6;
+}
+
+/* Two-column tiles */
+.bento-tile-about {
+  grid-column: span 2;
+}
+
+.bento-tile-skills {
+  grid-column: span 2;
+}
+
+.bento-tile-experience {
+  grid-column: span 2;
+}
+
+/* Wide tiles for the bottom row */
+.bento-tile-projects {
+  grid-column: span 3;
+}
+
+.bento-tile-contact {
+  grid-column: span 3;
+}
+
+@media (max-width: 640px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-tile,
+  .bento-tile-hero,
+  .bento-tile-about,
+  .bento-tile-skills,
+  .bento-tile-experience,
+  .bento-tile-projects,
+  .bento-tile-contact {
+    grid-column: span 1;
+  }
+}

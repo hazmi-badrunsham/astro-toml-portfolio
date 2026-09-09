@@ -1,0 +1,91 @@
+/* Terminal — window chrome with prompt-based section bands */
+
+.terminal-layout {
+  padding-block: var(--spacing-section);
+}
+
+.terminal-window {
+  background-color: var(--color-background);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--panel-shadow);
+  overflow: hidden;
+}
+
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-gap);
+  padding: var(--spacing-container);
+  background-color: var(--color-surface);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: var(--radius-sm);
+}
+
+.terminal-dot {
+  width: var(--radius-md);
+  height: var(--radius-md);
+}
+
+.terminal-dot-close {
+  background-color: var(--color-accent);
+}
+
+.terminal-dot-minimize {
+  background-color: var(--color-muted);
+}
+
+.terminal-dot-maximize {
+  background-color: var(--color-border);
+}
+
+.terminal-title {
+  color: var(--color-muted);
+  font-family: var(--font-body);
+}
+
+.terminal-body {
+  padding: var(--spacing-container);
+}
+
+.terminal-session {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gap);
+}
+
+.terminal-commandline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--radius-sm);
+  font-family: var(--font-body);
+}
+
+.terminal-prompt {
+  color: var(--color-accent);
+}
+
+.terminal-command {
+  color: var(--color-muted);
+}
+
+.terminal-cursor {
+  color: var(--color-accent);
+  animation: terminal-blink calc(var(--transition-duration) * 2) step-end infinite;
+}
+
+@keyframes terminal-blink {
+  0%,
+  49.99% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,68 @@
+---
+import { getSiteConfig } from '../../lib/config';
+import { getCollection, render } from 'astro:content';
+import Container from '../../components/ui/Container.astro';
+import SectionTitle from '../../components/ui/SectionTitle.astro';
+import Tag from '../../components/ui/Tag.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts
+    .filter((p) => p.data.published !== false)
+    .map((post) => ({
+      params: { slug: post.id.split('/').pop()!.replace(/\.md$/, '') },
+      props: { post },
+    }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const data = post.data;
+const site = getSiteConfig();
+---
+
+<html lang={`${site.language}`}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{data.title}</title>
+    <meta name="description" content={data.description ?? ''} />
+  </head>
+  <body>
+    <Container>
+      <SectionTitle title={data.title} />
+      <time datetime={data.date.toISOString()}>
+        {data.date.toLocaleDateString(
+          site.language === 'en' ? 'en-US' : site.language, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }
+        )}
+      </time>
+      {data.description && <p>{data.description}</p>}
+      {data.tags && data.tags.length > 0 && (
+        <div>
+          {data.tags?.map((t: string) => (
+            <Tag label={t} />
+          ))}
+        </div>
+      )}
+      <hr
+        style="border:none;border-top:var(--border-width) solid var(--color-border);margin:var(--spacing-gap) 0"
+      />
+      <Content />
+      <style>
+        time {
+          display: block;
+          color: var(--color-muted);
+          font-size: 0.875rem;
+          margin-bottom: var(--spacing-gap);
+        }
+        hr {
+          border: none;
+        }
+      </style>
+    </Container>
+  </body>
+</html>

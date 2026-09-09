@@ -9,17 +9,26 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "create": "node scripts/create-toml-portfolio.mjs",
+    "previews": "node scripts/generate-previews.mjs"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
     "astro": "^7.2.10",
+    "sharp": "^0.33.5",
     "zod": "^4.5.4"
   },
   "allowScripts": {
     "esbuild": true
   },
   "devDependencies": {
-    "@types/iarna__toml": "^2.0.5"
+    "@astrojs/check": "^0.9.10",
+    "@types/iarna__toml": "^2.0.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
   }
 }

@@ -61,7 +61,7 @@
 /* Minimalist section cards with clean hover state */
 .japanese-section-wrapper {
   position: relative;
-  transition: transform var(--transition-normal);
+  transition: transform var(--transition-duration) var(--transition-easing);
 }
 
 .japanese-section-wrapper:hover {

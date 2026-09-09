@@ -1,27 +1,68 @@
+# khakis-90s
+# [colors]
+# background = "#f4efe6"       # Warm vintage beige paper
+# surface = "#ebdccb"          # Sand/Khaki card background
+# surface_hover = "#e2cfb9"    # Darker khaki hover
+# foreground = "#2b261f"       # Deep warm espresso ink
+# muted = "#6e6252"           # Muted olive-tan text
+# accent = "#a34828"          # 90s Rust / Terracotta red
+# accent_muted = "#a3482820"   # Muted rust tint
+# border = "#2b261f"          # Dark crisp border outlines
+# selection = "#a34828"
+
+# [fonts]
+# heading = "'Courier New', Courier, monospace, sans-serif"
+# body = "system-ui, -apple-system, sans-serif"
+
+# [spacing]
+# section = "2.5rem"
+# container = "1.5rem"
+# gap = "1.25rem"
+
+# [layout]
+# max_width = "750px"
+
+# [style]
+# border_width = "2px"
+# border_radius = "4px"
+# panel_shadow = "4px 4px 0px #2b261f"
+
+# minimal
 [colors]
-background = "#f4efe6"       # Warm vintage beige paper
-surface = "#ebdccb"          # Sand/Khaki card background
-surface_hover = "#e2cfb9"    # Darker khaki hover
-foreground = "#2b261f"       # Deep warm espresso ink
-muted = "#6e6252"           # Muted olive-tan text
-accent = "#a34828"          # 90s Rust / Terracotta red
-accent_muted = "#a3482820"   # Muted rust tint
-border = "#2b261f"          # Dark crisp border outlines
-selection = "#a34828"
+background = "#ffffff"       # Pure clean white
+surface = "#f8fafc"          # Subtle off-white surface
+surface_hover = "#f1f5f9"    # Soft light gray hover state
+foreground = "#0f172a"       # Deep slate black text
+muted = "#64748b"           # Balanced gray for secondary text
+accent = "#2563eb"          # Electric blue accent
+accent_muted = "#2563eb15"   # Ultra-light blue tint for tags
+border = "#e2e8f0"          # Light border lines
+selection = "#2563eb"        # Accent highlight color
 
 [fonts]
-heading = "'Courier New', Courier, monospace, sans-serif"
-body = "system-ui, -apple-system, sans-serif"
+heading = "Inter, system-ui, -apple-system, sans-serif"
+body = "Inter, system-ui, -apple-system, sans-serif"
+heading_weight = "700"
+body_weight = "400"
+heading_letter_spacing = "normal"
+body_letter_spacing = "normal"
 
 [spacing]
-section = "2.5rem"
-container = "1.5rem"
-gap = "1.25rem"
+section = "4rem"
+container = "2rem"
+gap = "1.5rem"
 
 [layout]
-max_width = "750px"
+max_width = "800px"
 
 [style]
-border_width = "2px"
-border_radius = "4px"
-panel_shadow = "4px 4px 0px #2b261f"
+border_width = "1px"
+border_radius = "8px"
+radius_sm = "4px"
+radius_md = "8px"
+radius_lg = "16px"
+panel_shadow = "0 1px 3px 0 rgba(0, 0, 0, 0.05)"
+
+[motion]
+duration = "200ms"
+easing = "ease-out"

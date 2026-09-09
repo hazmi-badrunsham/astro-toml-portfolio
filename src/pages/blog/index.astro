@@ -1,0 +1,75 @@
+---
+import { getSiteConfig } from '../../lib/config';
+import { getBlogPosts } from '../../lib/config';
+import Container from '../../components/ui/Container.astro';
+import SectionTitle from '../../components/ui/SectionTitle.astro';
+import Tag from '../../components/ui/Tag.astro';
+
+const site = getSiteConfig();
+const blog = site.blog;
+
+if (!blog?.enabled) {
+  return Astro.redirect('/');
+}
+
+const posts = await getBlogPosts();
+if (!posts || posts.length === 0) {
+  return Astro.redirect('/');
+}
+
+const title = blog.title ?? `${site.title} Blog`;
+const description = blog.description ?? '';
+---
+
+<html lang={`${site.language}`}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <Container>
+      <SectionTitle title={title} />
+      {description && <p>{description}</p>}
+      <ul>
+        {posts.map((post) => (
+          <article>
+            <h3>
+              <a href={`/blog/${post.id.split('/').pop()!.replace(/\.md$/, '')}/`}>{post.data.title}</a>
+            </h3>
+            {post.data.description && <p>{post.data.description}</p>}
+            {post.data.tags && post.data.tags.length > 0 && (
+              <div>
+                {post.data.tags.map((t) => (
+                  <Tag label={t} />
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
+      </ul>
+      <style>
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        article {
+          padding: var(--spacing-gap);
+          border-top: var(--border-width) solid var(--color-border);
+        }
+        article h3 {
+          margin: 0 0 0.25rem;
+        }
+        article h3 a {
+          text-decoration: none;
+          color: var(--color-foreground);
+        }
+        article h3 a:hover {
+          text-decoration: underline;
+        }
+      </style>
+    </Container>
+  </body>
+</html>

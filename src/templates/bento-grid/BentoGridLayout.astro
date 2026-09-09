@@ -13,16 +13,19 @@ interface Props {
 const { data, sections } = Astro.props;
 
 const RenderList = sections.map((name) => ({
+  name,
   Section: SECTION_COMPONENTS[name],
   data: getSectionData(data, name),
 }));
 ---
 
-<div class="minimal-layout">
+<div class="bento-layout">
   <Container>
-    <main class="minimal-main">
-      {RenderList.map(({ Section, data: sectionData }) => (
-        <Section data={sectionData} />
+    <main class="bento-grid">
+      {RenderList.map(({ name, Section, data: sectionData }) => (
+        <div class={`bento-tile bento-tile-${name}`}>
+          <Section data={sectionData} />
+        </div>
       ))}
     </main>
   </Container>

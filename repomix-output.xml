@@ -1,0 +1,4039 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/
+  workflows/
+    ci.yml
+public/
+  template-previews/
+    bento-grid.png
+    dark-japanese.png
+    editorial.png
+    khakis-90s.png
+    minimal.png
+    terminal.png
+  avatar.jpg
+  favicon.ico
+  favicon.svg
+scripts/
+  _fix-blog-files.mjs
+  _fix-blog-slugs.mjs
+  _fix-index-astro.mjs
+  _fix-index-astro2.mjs
+  _fix-refine-message.mjs
+  _write-blog-index.mjs
+  create-toml-portfolio.mjs
+  generate-previews.mjs
+src/
+  components/
+    sections/
+      About.astro
+      Blog.astro
+      Contact.astro
+      Experience.astro
+      Hero.astro
+      Projects.astro
+      Skills.astro
+    ui/
+      Container.astro
+      SectionTitle.astro
+      Tag.astro
+  config/
+    portfolio.toml
+    site.toml
+    theme.toml
+  content/
+    blog/
+      welcome.md
+  lib/
+    analytics.ts
+    config.ts
+    i18n.ts
+    og-integration.ts
+    schema.ts
+    sections.ts
+    template.ts
+    tokens.ts
+  pages/
+    blog/
+      [slug].astro
+      index.astro
+    index.astro
+  styles/
+    global.css
+    reset.css
+  templates/
+    bento-grid/
+      BentoGridLayout.astro
+      styles.css
+      template.json
+    dark-japanese/
+      DarkJapaneseLayout.astro
+      styles.css
+      template.json
+    editorial/
+      EditorialLayout.astro
+      styles.css
+      template.json
+    khakis-90s/
+      Khakis90sLayout.astro
+      styles.css
+      template.json
+    minimal/
+      MinimalLayout.astro
+      styles.css
+      template.json
+    terminal/
+      styles.css
+      template.json
+      TerminalLayout.astro
+  test/
+    fixtures.ts
+    schema.test.ts
+    theme.test.ts
+  types/
+    portfolio.ts
+  content.config.ts
+.gitignore
+AGENTS.md
+astro.config.mjs
+CLAUDE.md
+package.json
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".github/workflows/ci.yml">
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check (astro check)
+        run: npm run check
+
+      - name: Run tests (vitest)
+        run: npm run test:run
+
+      - name: Build site (astro build)
+        run: npm run build
+</file>
+
+<file path="scripts/_fix-blog-files.mjs">
+import { readFileSync, writeFileSync } from 'node:fs';
+
+// Fix index.astro - the await result needs to be checked
+let indexContent = readFileSync('src/pages/index.astro', 'utf8');
+// The pattern is: {(await getBlogPosts()).filter(...)
+// We need to handle the case where getBlogPosts() returns undefined
+indexContent = indexContent.replace(
+  /\{(await getBlogPosts\(\))\.filter\(/g,
+  '{((await getBlogPosts()) ?? []).filter('
+);
+writeFileSync('src/pages/index.astro', indexContent, 'utf8');
+console.log('Fixed index.astro');
+
+// Fix [slug].astro - post.render is a property, not a method
+let slugContent = readFileSync('src/pages/blog/[slug].astro', 'utf8');
+slugContent = slugContent.replace(
+  'const { Content, data } = post.render;',
+  'const { Content, data } = await post.render();'
+);
+writeFileSync('src/pages/blog/[slug].astro', slugContent, 'utf8');
+console.log('Fixed [slug].astro');
+</file>
+
+<file path="scripts/_fix-blog-slugs.mjs">
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const filePath = 'src/pages/blog/index.astro';
+let content = readFileSync(filePath, 'utf8');
+
+// Fix post.slug -> post.id-based slug extraction
+content = content.replace(
+  /<a href={\`\/blog\/\$\{post\.slug\}\/\`}>/g,
+  '<a href={`/blog/${post.id.split(\'/\').pop()!.replace(/\\.md$/, \'\')}/`}>'
+);
+
+writeFileSync(filePath, content, 'utf8');
+console.log('Fixed index.astro');
+console.log(content.split('\n').find(l => l.includes('post.id')));
+</file>
+
+<file path="scripts/_fix-index-astro.mjs">
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const filePath = 'src/pages/index.astro';
+let content = readFileSync(filePath, 'utf8');
+
+// Fix the possibly undefined getBlogPosts() result
+content = content.replace(
+  '{(await getBlogPosts()).filter',
+  '{(await getBlogPosts())?.filter'
+);
+
+writeFileSync(filePath, content, 'utf8');
+console.log('Fixed index.astro - added optional chaining for getBlogPosts()');
+</file>
+
+<file path="scripts/_fix-index-astro2.mjs">
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const filePath = 'src/pages/index.astro';
+let content = readFileSync(filePath, 'utf8');
+
+// Fix the getBlogPosts() call to handle undefined
+// Pattern: {(await getBlogPosts())
+// Replace with: {((await getBlogPosts()) ?? [])
+content = content.replace(
+  '{(await getBlogPosts())',
+  '{((await getBlogPosts()) ?? [])'
+);
+
+writeFileSync(filePath, content, 'utf8');
+console.log('Fixed index.astro - added null coalescing for getBlogPosts()');
+console.log('Line 108:', content.split('\n')[107]);
+</file>
+
+<file path="scripts/_fix-refine-message.mjs">
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const filePath = 'src/lib/schema.ts';
+let content = readFileSync(filePath, 'utf8');
+
+// Fix the refine message - replace the function with a static string
+content = content.replace(
+  /message: \(v\) => `Unsupported language code "\\$\{v\}". Use one of: \$\{KNOWN_LANG_CODES\.join\(', '\)\}$.`/,
+  'message: `Unsupported language code. Use one of: ${KNOWN_LANG_CODES.slice(0, 10).join(", ")}...`'
+);
+
+writeFileSync(filePath, content, 'utf8');
+console.log('Fixed schema.ts refine message');
+</file>
+
+<file path="scripts/_write-blog-index.mjs">
+// Generates src/pages/blog/index.astro and src/pages/blog/[slug].astro from a
+// single source of truth so we never battle inline heredoc quoting in the
+// shell. Re-run after any content change.
+import { writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pagesDir = resolve(__dirname, '../src/pages/blog');
+
+mkdirSync(pagesDir, { recursive: true });
+
+const indexDoc = `---
+import { getSiteConfig } from '../../lib/config';
+import { getBlogPosts } from '../../lib/config';
+import Container from '../../components/ui/Container.astro';
+import SectionTitle from '../../components/ui/SectionTitle.astro';
+import Tag from '../../components/ui/Tag.astro';
+
+const site = getSiteConfig();
+const blog = site.blog;
+
+if (!blog?.enabled) {
+  return Astro.redirect('/');
+}
+
+const posts = await getBlogPosts();
+if (!posts || posts.length === 0) {
+  return Astro.redirect('/');
+}
+
+const title = blog.title ?? \`\${site.title} Blog\`;
+const description = blog.description ?? '';
+---
+
+<html lang={\`\${site.language}\`}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <Container>
+      <SectionTitle title={title} />
+      {description && <p>{description}</p>}
+      <ul>
+        {posts.map((post) => (
+          <article>
+            <h3>
+              <a href={\`/blog/\${post.slug}/\`}>{post.data.title}</a>
+            </h3>
+            {post.data.description && <p>{post.data.description}</p>}
+            {post.data.tags && post.data.tags.length > 0 && (
+              <div>
+                {post.data.tags.map((t) => (
+                  <Tag label={t} />
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
+      </ul>
+      <style>
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        article {
+          padding: var(--spacing-gap);
+          border-top: var(--border-width) solid var(--color-border);
+        }
+        article h3 {
+          margin: 0 0 0.25rem;
+        }
+        article h3 a {
+          text-decoration: none;
+          color: var(--color-foreground);
+        }
+        article h3 a:hover {
+          text-decoration: underline;
+        }
+      </style>
+    </Container>
+  </body>
+</html>
+`;
+
+const postDoc = `---
+import { getSiteConfig } from '../../../lib/config';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import Container from '../../../components/ui/Container.astro';
+import SectionTitle from '../../../components/ui/SectionTitle.astro';
+import Tag from '../../../components/ui/Tag.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts
+    .filter((p) => p.data.published !== false)
+    .map((post) => ({
+      params: { slug: post.slug },
+      props: post,
+    }));
+}
+
+const { post } = Astro.props as { post: CollectionEntry<'blog'> };
+const { Content, data } = await post.render();
+const site = getSiteConfig();
+const blog = site.blog;
+---
+
+<html lang={\`\${site.language}\`}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{data.title}</title>
+    <meta name="description" content={data.description ?? ''} />
+  </head>
+  <body>
+    <Container>
+      <SectionTitle title={data.title} />
+      <time datetime={data.date.toISOString()}>
+        {data.date.toLocaleDateString(
+          site.language === 'en' ? 'en-US' : site.language, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }
+        )}
+      </time>
+      {data.description && <p>{data.description}</p>}
+      {data.tags && data.tags.length > 0 && (
+        <div>
+          {data.tags.map((t) => (
+            <Tag label={t} />
+          ))}
+        </div>
+      )}
+      <hr
+        style="border:none;border-top:var(--border-width) solid var(--color-border);margin:var(--spacing-gap) 0"
+      />
+      <Content />
+      <style>
+        time {
+          display: block;
+          color: var(--color-muted);
+          font-size: 0.875rem;
+          margin-bottom: var(--spacing-gap);
+        }
+        hr {
+          border: none;
+        }
+      </style>
+    </Container>
+  </body>
+</html>
+`;
+
+writeFileSync(`${pagesDir}/index.astro`, indexDoc, 'utf8');
+writeFileSync(`${pagesDir}/[slug].astro`, postDoc, 'utf8');
+
+console.log('wrote', `${pagesDir}/index.astro`, 'and', `${pagesDir}/[slug].astro`);
+</file>
+
+<file path="scripts/create-toml-portfolio.mjs">
+#!/usr/bin/env node
+// Scaffold a new zero-code portfolio from this engine's template set.
+//
+// Lives in `scripts/` for now; will be packaged as the standalone
+// `create-toml-portfolio` npm package later.
+//
+// Usage:
+//   node scripts/create-toml-portfolio.mjs [target-dir]
+//   (target-dir defaults to ./my-portfolio)
+//
+// The script copies this repo (minus node_modules, .git, dist and other
+// build artefacts), prompts for the site name + starting template, writes
+// those into src/config/site.toml, and prints the next steps.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import readline from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// Anything a fresh checkout does not need.
+const SKIP = new Set([
+  '.git',
+  'node_modules',
+  'dist',
+  '.astro',
+  'repomix-output.xml',
+]);
+
+const TEMPLATE_CHOICES = [
+  'minimal',
+  'dark-japanese',
+  'khakis-90s',
+  'bento-grid',
+  'terminal',
+  'editorial',
+];
+
+function copyTree(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    if (SKIP.has(entry.name)) continue;
+    const from = path.join(src, entry.name);
+    const to = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyTree(from, to);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(from, to);
+    }
+  }
+}
+
+function patchSiteToml(targetRoot, { siteName, template }) {
+  const sitePath = path.join(targetRoot, 'src', 'config', 'site.toml');
+  let text = fs.readFileSync(sitePath, 'utf8');
+
+  text = text.replace(/^\s*title\s*=.*$/m, `title = ${JSON.stringify(siteName)}`);
+  text = text.replace(
+    /^\s*template\s*=.*$/m,
+    `template = ${JSON.stringify(template)}`
+  );
+
+  // Normalize to LF so scaffolded projects behave identically on any OS.
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  fs.writeFileSync(sitePath, text, 'utf8');
+}
+
+// --- prompting ------------------------------------------------------------
+// Works both interactively (TTY) and with piped/stdin-redirected input.
+//
+// Note: plain readline.question() drops input when several lines arrive in a
+// single chunk (each buffered line is processed synchronously, before the
+// next question() registers), which hangs the second prompt on piped input.
+// So for piped input we buffer all lines up front; for a TTY we prompt
+// interactively.
+async function readPipedLines() {
+  if (process.stdin.isTTY) return null;
+  let data = '';
+  process.stdin.setEncoding('utf8');
+  for await (const chunk of process.stdin) data += chunk;
+  // Normalize CRLF/CR so line splitting is platform-independent; the
+  // target TOML files are rewritten with LF newlines below.
+  return data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+    .map((line) => line.trim());
+}
+
+async function ask(rl, piped, promptText, fallback) {
+  if (piped !== null) {
+    const answer = (piped.length > 0 ? piped.shift() : '') ?? '';
+    process.stdout.write(`${promptText}${answer}\n`);
+    return answer === '' ? fallback : answer;
+  }
+  const answer = (await rl.question(promptText)).trim();
+  return answer === '' ? fallback : answer;
+}
+
+async function main() {
+  const targetDir = process.argv[2] ?? 'my-portfolio';
+  const targetRoot = path.resolve(process.cwd(), targetDir);
+
+  if (fs.existsSync(targetRoot) && fs.readdirSync(targetRoot).length > 0) {
+    console.error(`✖ ${targetDir} already exists and is not empty. Aborting.`);
+    process.exit(1);
+  }
+
+  console.log(`Scaffolding a new TOML portfolio in ${targetDir} …`);
+  copyTree(ROOT, targetRoot);
+
+  const piped = await readPipedLines();
+  const rl = piped === null ? readline.createInterface({ input, output }) : null;
+
+  const siteName = await ask(
+    rl,
+    piped,
+    'Site name (e.g. "Your Name")? ',
+    'My Portfolio'
+  );
+
+  console.log(`Starting template (one of: ${TEMPLATE_CHOICES.join(', ')})`);
+  let template = await ask(rl, piped, 'Template [minimal]? ', 'minimal');
+  if (!TEMPLATE_CHOICES.includes(template)) {
+    console.log(`⚠ Unknown template "${template}", falling back to "minimal".`);
+    template = 'minimal';
+  }
+
+  if (rl) rl.close();
+
+  patchSiteToml(targetRoot, { siteName, template });
+
+  console.log('');
+  console.log('✔ Done! Next steps:');
+  console.log(`  cd ${targetDir}`);
+  console.log('  npm install');
+  console.log('  npm run dev');
+  console.log('');
+  console.log(`(template = "${template}" written to src/config/site.toml)`);
+}
+
+main().catch((err) => {
+  console.error('✖ Scaffold failed:', err?.message ?? err);
+  process.exit(1);
+});
+</file>
+
+<file path="scripts/generate-previews.mjs">
+// scripts/generate-previews.mjs
+// Generates placeholder wireframe preview images for every template in
+// src/templates/<key>/ → public/template-previews/<key>.png
+//
+// The template gallery (Phase 5) reads `previewImage` from each template's
+// template.json. These are deterministic stand-ins until real screenshots
+// are captured — replace any <key>.png with an actual screenshot.
+//
+// Run: node scripts/generate-previews.mjs
+import zlib from 'node:zlib';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const OUT_DIR = path.resolve('public/template-previews');
+const W = 480;
+const H = 300;
+
+/* ---------- minimal PNG encoder (no external deps) ---------- */
+
+let CRC_TABLE = null;
+function crc32(data) {
+  if (!CRC_TABLE) {
+    CRC_TABLE = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >> 1)) : (c >> 1);
+      CRC_TABLE[n] = c;
+    }
+  }
+  let crc = 0xffffffff;
+  for (const b of data) crc = CRC_TABLE[(crc ^ b) & 0xff] ^ (crc >> 8);
+  // JS bitwise ops are signed int32; normalize to an unsigned value.
+  const raw = crc ^ 0xffffffff;
+  return ((raw + 0x100000000) % 0x100000000);
+}
+
+function chunk(type, data) {
+  const t = Buffer.from(type, 'ascii');
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([t, data])));
+  return Buffer.concat([len, t, data, crc]);
+}
+
+function hexColor(hex) {
+  return parseInt(hex.replace('#', ''), 16);
+}
+
+class Canvas {
+  constructor(w, h, bgHex) {
+    this.w = w;
+    this.h = h;
+    this.px = Buffer.alloc(w * h * 4);
+    this.fill(0, 0, w, h, hexColor(bgHex));
+  }
+
+  fill(x, y, w, h, color) {
+    if (w <= 0 || h <= 0) return;
+    const x0 = Math.max(0, x);
+    const y0 = Math.max(0, y);
+    const x1 = Math.min(this.w, x + w);
+    const y1 = Math.min(this.h, y + h);
+    for (let j = y0; j < y1; j++) {
+      const base = (j * this.w + x0) * 4;
+      for (let i = base; i < base + (x1 - x0) * 4; i += 4) {
+        this.px[i] = (color >> 16) & 0xff;
+        this.px[i + 1] = (color >> 8) & 0xff;
+        this.px[i + 2] = color & 0xff;
+        this.px[i + 3] = 0xff;
+      }
+    }
+  }
+
+  outline(x, y, w, h, colorHex, thickness = 1) {
+    const c = hexColor(colorHex);
+    this.fill(x, y, w, thickness, c);
+    this.fill(x, y + h - thickness, w, thickness, c);
+    this.fill(x, y, thickness, h, c);
+    this.fill(x + w - thickness, y, thickness, h, c);
+  }
+
+  save(file) {
+    const stride = this.w * 4;
+    const raw = Buffer.alloc((stride + 1) * this.h);
+    let p = 0;
+    for (let y = 0; y < this.h; y++) {
+      raw[p++] = 0; // filter: none
+      this.px.copy(raw, p, y * stride, (y + 1) * stride);
+      p += stride;
+    }
+    const idat = zlib.deflateSync(raw);
+
+    const ihdr = Buffer.alloc(13);
+    ihdr.writeUInt32BE(this.w, 0);
+    ihdr.writeUInt32BE(this.h, 4);
+    ihdr[8] = 8; // bit depth
+    ihdr[9] = 6; // color type: RGBA
+    const png = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      chunk('IHDR', ihdr),
+      chunk('IDAT', idat),
+      chunk('IEND', Buffer.alloc(0)),
+    ]);
+    fs.writeFileSync(file, png);
+  }
+}
+
+/* ---------- tiny drawing helpers ---------- */
+
+function bar(c, x, y, w, h, colorHex) {
+  c.fill(x, y, w, h, hexColor(colorHex));
+}
+
+function textLines(c, x, y, lines, colorHex) {
+  let ty = y;
+  for (const len of lines) {
+    bar(c, x, ty, len, 4, colorHex);
+    ty += 9;
+  }
+}
+
+function card(c, x, y, w, h, surfaceHex, borderHex, lines) {
+  c.fill(x, y, w, h, hexColor(surfaceHex));
+  c.outline(x, y, w, h, borderHex, 1);
+  textLines(c, x + 10, y + 8, lines, '#64748b');
+}
+
+/* ---------- per-template previews ---------- */
+
+function previewMinimal() {
+  const c = new Canvas(W, H, '#f8fafc');
+  bar(c, 90, 44, 170, 26, '#0f172a'); // name
+  bar(c, 90, 84, 260, 9, '#64748b'); // role
+  for (let i = 0; i < 4; i++) {
+    card(c, 90, 124 + i * 42, 300, 34, '#ffffff', '#e2e8f0', [120, 190]);
+  }
+  return c;
+}
+
+function previewDarkJapanese() {
+  const c = new Canvas(W, H, '#111827');
+  bar(c, 96, 40, 4, 220, '#f87171'); // vertical accent frame
+  bar(c, 126, 48, 150, 24, '#e5e7eb'); // name
+  bar(c, 126, 84, 100, 7, '#9ca3af'); // subtitle
+  card(c, 126, 112, 190, 28, '#1f2937', '#374151', [110, 150]);
+  card(c, 126, 156, 190, 28, '#1f2937', '#374151', [110, 150]);
+  card(c, 126, 200, 190, 28, '#1f2937', '#374151', [110, 150]);
+  c.outline(396, 44, 36, 42, '#f87171', 2); // hanko seal
+  return c;
+}
+
+function previewKhakis() {
+  const c = new Canvas(W, H, '#f4efe6');
+  bar(c, 90, 28, 104, 16, '#a34828'); // retro badge
+  c.fill(96, 66, 302, 42, '#2b261f'); // hard shadow
+  card(c, 90, 60, 302, 42, '#ebdccb', '#2b261f', [150, 220]); // hero card
+  for (let i = 0; i < 3; i++) {
+    c.fill(96, 126 + i * 40, 302, 34, '#2b261f');
+    card(c, 90, 122 + i * 40, 302, 34, '#ebdccb', '#2b261f', [140, 200]);
+  }
+  return c;
+}
+
+function previewBento() {
+  const c = new Canvas(W, H, '#f8fafc');
+  // full-width hero tile
+  card(c, 60, 40, 360, 46, '#ffffff', '#e2e8f0', [150, 240]);
+  // three two-column tiles
+  for (let i = 0; i < 3; i++) {
+    card(c, 60 + i * 124, 114, 112, 92, '#ffffff', '#e2e8f0', [60, 80, 70]);
+  }
+  // two three-column tiles
+  card(c, 60, 234, 172, 50, '#ffffff', '#e2e8f0', [120, 140]);
+  card(c, 244, 234, 172, 50, '#ffffff', '#e2e8f0', [120, 140]);
+  return c;
+}
+
+function previewTerminal() {
+  const c = new Canvas(W, H, '#0f172a');
+  bar(c, 60, 40, 360, 26, '#1e293b'); // titlebar
+  bar(c, 70, 46, 10, 10, '#ef4444'); // close dot
+  bar(c, 88, 46, 10, 10, '#f59e0b'); // minimize dot
+  bar(c, 106, 46, 10, 10, '#22c55e'); // maximize dot
+  const y0 = 86;
+  for (let i = 0; i < 4; i++) {
+    const y = y0 + i * 46;
+    bar(c, 66, y, 22, 8, '#22c55e'); // prompt `$`
+    bar(c, 94, y, 120, 8, '#94a3b8'); // command text
+    c.fill(66, y + 18, 350, 18, '#1e293b'); // output block
+    bar(c, 76, y + 22, 120, 4, '#64748b');
+    bar(c, 76, y + 30, 180, 4, '#475569');
+  }
+  bar(c, 66, y0 + 192, 22, 8, '#22c55e');
+  bar(c, 94, y0 + 192, 10, 8, '#a3e635'); // blinking cursor
+  return c;
+}
+
+function previewEditorial() {
+  const c = new Canvas(W, H, '#fdfbf7');
+  bar(c, 190, 28, 100, 6, '#6b7280'); // dateline
+  bar(c, 120, 48, 170, 20, '#1f2937'); // masthead name
+  bar(c, 150, 76, 130, 6, '#6b7280'); // deck
+  bar(c, 60, 94, 360, 2, '#1f2937'); // double rule
+  bar(c, 60, 100, 360, 1, '#9ca3af');
+  // two text columns (About)
+  textLines(c, 60, 116, [70, 90, 80, 100, 60, 140], '#6b7280');
+  textLines(c, 250, 116, [80, 70, 90, 60, 100, 70], '#6b7280');
+  // two experience cards
+  card(c, 60, 206, 172, 44, '#fdfbf7', '#1f2937', [120, 140]);
+  card(c, 244, 206, 172, 44, '#fdfbf7', '#1f2937', [110, 140]);
+  bar(c, 60, 272, 360, 1, '#1f2937'); // footer rule
+  return c;
+}
+
+/* ---------- write all previews ---------- */
+
+const PREVIEWS = {
+  'minimal': previewMinimal,
+  'dark-japanese': previewDarkJapanese,
+  'khakis-90s': previewKhakis,
+  'bento-grid': previewBento,
+  'terminal': previewTerminal,
+  'editorial': previewEditorial,
+};
+
+fs.mkdirSync(OUT_DIR, { recursive: true });
+
+let wrote = 0;
+for (const [key, fn] of Object.entries(PREVIEWS)) {
+  const file = path.join(OUT_DIR, `${key}.png`);
+  fn().save(file);
+  const bytes = fs.statSync(file).size;
+  console.log(`wrote ${file} (${bytes} bytes)`);
+  wrote++;
+}
+console.log(`Done — ${wrote} preview(s) in ${OUT_DIR}`);
+</file>
+
+<file path="src/components/sections/Blog.astro">
+---
+// Blog section component - rendered as part of the shared section system.
+// When blog is enabled, this shows recent posts. When disabled, nothing renders.
+import type { BlogPost } from '../../lib/config';
+import Container from '../../components/ui/Container.astro';
+import SectionTitle from '../../components/ui/SectionTitle.astro';
+import Tag from '../../components/ui/Tag.astro';
+
+interface Props {
+  posts?: BlogPost[];
+  title?: string;
+  description?: string;
+  postsPerPage?: number;
+}
+
+const { posts = [], title = 'Blog', description = '', postsPerPage = 10 } = Astro.props;
+---
+
+{posts.length === 0 ? null : (
+  <section class="blog-section" id="blog">
+    <Container>
+      <SectionTitle title={title} />
+      {description && <p>{description}</p>}
+      <ul>
+        {posts.slice(0, postsPerPage).map((post) => (
+          <article>
+            <h3>
+              <a href={`/blog/${post.id.split('/').pop()!.replace(/\.md$/, '')}/`}>{post.data.title}</a>
+            </h3>
+            {post.data.description && <p>{post.data.description}</p>}
+            {post.data.tags && post.data.tags.length > 0 && (
+              <div>
+                {post.data.tags.map((t) => (
+                  <Tag label={t} />
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
+      </ul>
+      <a href="/blog/">View all posts</a>
+      <style>
+        .blog-section {
+          margin-top: var(--spacing-section);
+        }
+        .blog-section article {
+          padding: var(--spacing-gap);
+          border-top: var(--border-width) solid var(--color-border);
+        }
+        .blog-section h3 {
+          margin: 0 0 0.25rem;
+        }
+        .blog-section h3 a {
+          text-decoration: none;
+          color: var(--color-foreground);
+        }
+        .blog-section h3 a:hover {
+          text-decoration: underline;
+        }
+        .blog-section a[href$='/blog/'] {
+          margin-top: var(--spacing-gap);
+          display: inline-block;
+        }
+      </style>
+    </Container>
+  </section>
+)}
+</file>
+
+<file path="src/content/blog/welcome.md">
+---
+title: "Welcome to the TOML portfolio blog"
+date: 2026-09-09
+description: "A short sample post to show the blog section rendering. Delete or replace this when you're ready."
+tags: ["blog", "sample"]
+---
+
+Your portfolio now has a blog. To add real posts, drop Markdown files into
+`src/content/blog/` and configure `[blog] enabled = true` in `src/config/site.toml`.
+
+Every post gets its own page at `/blog/<slug>/` and shows up in the blog index at
+`/blog/`. The section uses the same SectionTitle, Container, and Tag UI components
+as the rest of the site, so it stays visually consistent.
+
+To disable the blog, set `enabled = false` (or remove the `[blog]` table entirely) —
+the site rebuilds without any blog markup.
+</file>
+
+<file path="src/lib/analytics.ts">
+export type AnalyticsProvider = 'none' | 'plausible' | 'umami';
+
+export interface AnalyticsScript {
+  tag: string;
+  attrs?: Record<string, string>;
+  body?: string;
+}
+
+/**
+ * Returns the HTML needed for the selected analytics provider, or a no-op
+ * empty string when provider === 'none' (the default).
+ *
+ * Callers render this inside <head>. The returned string is plain HTML, so it
+ * gets injected via `set:html`; it must already be sanitized/trusted (it only
+ * ever contains the provider's official script shape plus user-supplied
+ * `scriptUrl` when given).
+ */
+export function analyticsScript(
+  provider: AnalyticsProvider,
+  domain?: string,
+  scriptUrl?: string
+): string {
+  if (provider === 'none') return '';
+
+  if (provider === 'plausible') {
+    const url =
+      scriptUrl ??
+      `https://plausible.io/js/script.js${domain ? `?domain=${domain}` : ''}`;
+    return `<script defer data-domain="${domain ?? 'example.com'}" src="${url}"></script>`;
+  }
+
+  // umami: official self-hosted snippet shape.
+  const src = scriptUrl ?? 'https://analytics.example.com/umami.js';
+  const siteId = domain ?? 'default';
+  return `<script defer src="${src}" data-host-url="${src}" data-domains="${siteId}"></script>`;
+}
+</file>
+
+<file path="src/lib/i18n.ts">
+/**
+ * Tiny i18n helper for the language picker and a few picker-adjacent strings.
+ *
+ * Kept deliberately small: the engine does not ship a full i18n runtime. It
+ * only needs a label for the picker button/control and a couple of
+ * well-known locale display names. Add more as needed.
+ */
+
+export const LOCALE_LABELS: Record<string, string> = {
+  en: 'English',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
+  pt: 'Português',
+  it: 'Italiano',
+  ja: '日本語',
+  ko: '한국어',
+  zh: '中文',
+  ar: 'العربية',
+  hi: 'हिन्दी',
+  ru: 'Русский',
+  nl: 'Nederlands',
+  pl: 'Polski',
+  tr: 'Türkçe',
+  sv: 'Svenska',
+  da: 'Dansk',
+  fi: 'Suomi',
+  nb: 'Norsk bokmål',
+  ro: 'Română',
+  hu: 'Magyar',
+  cs: 'Čeština',
+  el: 'Ελληνικά',
+  th: 'ไทย',
+  vi: 'Tiếng Việt',
+  id: 'Bahasa Indonesia',
+  ms: 'Bahasa Melayu',
+  tl: 'Filipino',
+  uk: 'Українська',
+  he: 'עברית',
+  bn: 'বাংলা',
+  ta: 'தமிழ்',
+  te: 'తెలుగు',
+  mr: 'मराठी',
+  gu: 'ગુજરાતી',
+  kn: 'ಕನ್ನಡ',
+  ml: 'മലയാളം',
+  pa: 'ਪੰਜਾਬੀ',
+  ur: 'اردو',
+  fa: 'فارسی',
+  sw: 'Kiswahili',
+  af: 'Afrikaans',
+  ca: 'Català',
+  eu: 'Euskara',
+  gl: 'Galego',
+  sq: 'Shqip',
+  mk: 'Македонски',
+  sr: 'Српски',
+  bg: 'Български',
+  hr: 'Hrvatski',
+  sk: 'Slovenčina',
+  sl: 'Slovenščina',
+  lt: 'Lietuvių',
+  lv: 'Latviešu',
+  et: 'Eesti',
+  is: 'Íslenska',
+  cy: 'Cymraeg',
+  ga: 'Gaeilge',
+  mt: 'Malti',
+  la: 'Latina',
+};
+
+export function localeLabel(code: string): string {
+  return LOCALE_LABELS[code] ?? code;
+}
+</file>
+
+<file path="src/lib/og-integration.ts">
+/**
+ * Build-time OG image generator.
+ *
+ * When `[seo] generateOgImage = true` in site.toml, this integration
+ * generates a static social-share image at the build output root as
+ * og-image.png after the Astro build completes. The image is produced from
+ * the portfolio's site name and bio using sharp (SVG → PNG).
+ *
+ * When the flag is false or absent, the integration removes any pre-existing
+ * og-image.png so the build output stays identical to a site without this
+ * feature enabled.
+ */
+
+import fs from 'node:fs';
+import sharp from 'sharp';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { getSiteConfig } from './config';
+import { getPortfolioData } from './config';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+// const projectRoot = resolve(__dirname, '../..'); // unused
+
+export default function ogIntegration() {
+  return {
+    name: 'toml-portfolio-og-image',
+    hooks: {
+      'astro:build:done': async (result: { dir: { pathname: string } }) => {
+        const siteConfig = getSiteConfig();
+        const seo = siteConfig.seo;
+        const generate = seo?.generateOgImage;
+
+        // Output path inside the build directory.
+        const outPath = resolve(result.dir.pathname, 'og-image.png');
+
+        if (!generate) {
+          // Ensure no stale OG image remains when the feature is off.
+          if (fs.existsSync(outPath)) {
+            fs.unlinkSync(outPath);
+          }
+          return;
+        }
+
+        const portfolio = getPortfolioData();
+        const siteName =
+          seo?.siteName ?? portfolio.site.name ?? 'Portfolio';
+        const tagline = portfolio.site.bio ?? '';
+        const separator = seo?.separator ?? ' | ';
+
+        const titleText = `${siteName}${separator}${tagline}`.trim();
+
+        // Build an SVG with the title text. Simple composition: dark surface
+        // with light text, sized 1200×630 (Open Graph recommended).
+        const svg = buildOgSvg({
+          title: titleText,
+          width: 1200,
+          height: 630,
+        });
+
+        // sharp renders the SVG to PNG.
+        await sharp(Buffer.from(svg))
+          .png()
+          .toFile(outPath);
+
+        console.log(
+          `[toml-portfolio-og-image] Generated ${outPath}`
+        );
+      },
+    },
+  };
+}
+
+interface OgSvgOptions {
+  title: string;
+  width: number;
+  height: number;
+}
+
+function buildOgSvg({ title, width, height }: OgSvgOptions): string {
+  // Simple two-tone composition: dark background, light text.
+  const bg = '#0f172a';
+  const fg = '#f8fafc';
+  const accent = '#38bdf8';
+
+  // Break the title into lines that fit within the canvas width.
+  const maxCharsPerLine = Math.floor(width / 10); // rough estimate
+  const lines = wrapText(title, maxCharsPerLine);
+
+  // Estimate vertical positioning.
+  const lineHeight = 96;
+  const totalHeight = lines.length * lineHeight;
+  const startY = (height - totalHeight) / 2 + 80;
+
+  const textElements = lines
+    .map((line, i) => {
+      const y = startY + i * lineHeight;
+      // Accent the first line subtly.
+      const fill = i === 0 ? accent : fg;
+      return (
+        `<text x="${width / 2}" y="${y}" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="${fill}">${escapeXml(line)}</text>`
+      );
+    })
+    .join('\n      ');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="${bg}" />
+  <rect x="0" y="0" width="12" height="${height}" fill="${accent}" />
+  <text x="${width / 2}" y="56" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="400" fill="${fg}80">PORTFOLIO</text>
+  ${textElements}
+</svg>`;
+}
+
+function wrapText(text: string, maxChars: number): string[] {
+  if (text.length <= maxChars) return [text];
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    if ((current + ' ' + word).trim().length <= maxChars) {
+      current = (current + ' ' + word).trim();
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+</file>
+
+<file path="src/lib/sections.ts">
+// src/lib/sections.ts
+// Shared section-name → component mapping used by every template layout so the
+// `sections` array in site.toml can control ordering and visibility.
+// (Architecture rule 1: section components stay shared across all templates.)
+import type { PortfolioData } from '../types/portfolio';
+import type { SectionName } from './schema';
+import Hero from '../components/sections/Hero.astro';
+import About from '../components/sections/About.astro';
+import Skills from '../components/sections/Skills.astro';
+import Experience from '../components/sections/Experience.astro';
+import Projects from '../components/sections/Projects.astro';
+import Contact from '../components/sections/Contact.astro';
+import BlogSection from '../components/sections/Blog.astro';
+
+export const SECTION_COMPONENTS: Record<SectionName, any> = {
+  hero: Hero,
+  about: About,
+  skills: Skills,
+  experience: Experience,
+  projects: Projects,
+  contact: Contact,
+  blog: BlogSection,
+};
+
+/** Returns the slice of portfolio data expected by the section component. */
+export function getSectionData(portfolio: PortfolioData, name: SectionName): any {
+  switch (name) {
+    case 'hero':
+      return portfolio.site;
+    case 'about':
+      return portfolio.about;
+    case 'skills':
+      return portfolio.skills;
+    case 'experience':
+      return portfolio.experience;
+    case 'projects':
+      return portfolio.projects;
+    case 'contact':
+      return portfolio.contact;
+    case 'blog':
+      return portfolio.blog ?? {};
+  }
+}
+</file>
+
+<file path="src/pages/blog/[slug].astro">
+---
+import { getSiteConfig } from '../../lib/config';
+import { getCollection, render } from 'astro:content';
+import Container from '../../components/ui/Container.astro';
+import SectionTitle from '../../components/ui/SectionTitle.astro';
+import Tag from '../../components/ui/Tag.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts
+    .filter((p) => p.data.published !== false)
+    .map((post) => ({
+      params: { slug: post.id.split('/').pop()!.replace(/\.md$/, '') },
+      props: { post },
+    }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const data = post.data;
+const site = getSiteConfig();
+---
+
+<html lang={`${site.language}`}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{data.title}</title>
+    <meta name="description" content={data.description ?? ''} />
+  </head>
+  <body>
+    <Container>
+      <SectionTitle title={data.title} />
+      <time datetime={data.date.toISOString()}>
+        {data.date.toLocaleDateString(
+          site.language === 'en' ? 'en-US' : site.language, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }
+        )}
+      </time>
+      {data.description && <p>{data.description}</p>}
+      {data.tags && data.tags.length > 0 && (
+        <div>
+          {data.tags?.map((t: string) => (
+            <Tag label={t} />
+          ))}
+        </div>
+      )}
+      <hr
+        style="border:none;border-top:var(--border-width) solid var(--color-border);margin:var(--spacing-gap) 0"
+      />
+      <Content />
+      <style>
+        time {
+          display: block;
+          color: var(--color-muted);
+          font-size: 0.875rem;
+          margin-bottom: var(--spacing-gap);
+        }
+        hr {
+          border: none;
+        }
+      </style>
+    </Container>
+  </body>
+</html>
+</file>
+
+<file path="src/pages/blog/index.astro">
+---
+import { getSiteConfig } from '../../lib/config';
+import { getBlogPosts } from '../../lib/config';
+import Container from '../../components/ui/Container.astro';
+import SectionTitle from '../../components/ui/SectionTitle.astro';
+import Tag from '../../components/ui/Tag.astro';
+
+const site = getSiteConfig();
+const blog = site.blog;
+
+if (!blog?.enabled) {
+  return Astro.redirect('/');
+}
+
+const posts = await getBlogPosts();
+if (!posts || posts.length === 0) {
+  return Astro.redirect('/');
+}
+
+const title = blog.title ?? `${site.title} Blog`;
+const description = blog.description ?? '';
+---
+
+<html lang={`${site.language}`}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <Container>
+      <SectionTitle title={title} />
+      {description && <p>{description}</p>}
+      <ul>
+        {posts.map((post) => (
+          <article>
+            <h3>
+              <a href={`/blog/${post.id.split('/').pop()!.replace(/\.md$/, '')}/`}>{post.data.title}</a>
+            </h3>
+            {post.data.description && <p>{post.data.description}</p>}
+            {post.data.tags && post.data.tags.length > 0 && (
+              <div>
+                {post.data.tags.map((t) => (
+                  <Tag label={t} />
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
+      </ul>
+      <style>
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        article {
+          padding: var(--spacing-gap);
+          border-top: var(--border-width) solid var(--color-border);
+        }
+        article h3 {
+          margin: 0 0 0.25rem;
+        }
+        article h3 a {
+          text-decoration: none;
+          color: var(--color-foreground);
+        }
+        article h3 a:hover {
+          text-decoration: underline;
+        }
+      </style>
+    </Container>
+  </body>
+</html>
+</file>
+
+<file path="src/templates/bento-grid/BentoGridLayout.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
+import Container from '../../components/ui/Container.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+  sections: readonly SectionName[];
+}
+
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  name,
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+---
+
+<div class="bento-layout">
+  <Container>
+    <main class="bento-grid">
+      {RenderList.map(({ name, Section, data: sectionData }) => (
+        <div class={`bento-tile bento-tile-${name}`}>
+          <Section data={sectionData} />
+        </div>
+      ))}
+    </main>
+  </Container>
+</div>
+</file>
+
+<file path="src/templates/bento-grid/styles.css">
+/* Bento Grid — dashboard-style card layout */
+
+.bento-layout {
+  padding-block: var(--spacing-section);
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--spacing-gap);
+  align-items: stretch;
+}
+
+.bento-tile {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--panel-shadow);
+  padding: var(--spacing-container);
+  transition:
+    transform var(--transition-duration) var(--transition-easing),
+    box-shadow var(--transition-duration) var(--transition-easing);
+}
+
+.bento-tile:hover {
+  transform: translateY(calc(-1 * var(--radius-sm)));
+}
+
+/* Full-width banner tile */
+.bento-tile-hero {
+  grid-column: span 6;
+}
+
+/* Two-column tiles */
+.bento-tile-about {
+  grid-column: span 2;
+}
+
+.bento-tile-skills {
+  grid-column: span 2;
+}
+
+.bento-tile-experience {
+  grid-column: span 2;
+}
+
+/* Wide tiles for the bottom row */
+.bento-tile-projects {
+  grid-column: span 3;
+}
+
+.bento-tile-contact {
+  grid-column: span 3;
+}
+
+@media (max-width: 640px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-tile,
+  .bento-tile-hero,
+  .bento-tile-about,
+  .bento-tile-skills,
+  .bento-tile-experience,
+  .bento-tile-projects,
+  .bento-tile-contact {
+    grid-column: span 1;
+  }
+}
+</file>
+
+<file path="src/templates/bento-grid/template.json">
+{
+  "name": "Bento Grid",
+  "author": "community",
+  "description": "Card-based dashboard-style layout with sections as bento tiles.",
+  "previewImage": "/template-previews/bento-grid.png"
+}
+</file>
+
+<file path="src/templates/dark-japanese/template.json">
+{
+  "name": "Dark Japanese",
+  "author": "Hazmi Badrunsham",
+  "description": "Ink-and-paper aesthetic with a vertical accent frame and hanko seal.",
+  "previewImage": "/template-previews/dark-japanese.png"
+}
+</file>
+
+<file path="src/templates/editorial/EditorialLayout.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
+import Container from '../../components/ui/Container.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+  sections: readonly SectionName[];
+}
+
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  name,
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+
+// When the configured order starts with hero, use it as the masthead headline.
+const IsHeroFirst = RenderList[0]?.name === 'hero';
+const HeroSection = IsHeroFirst ? RenderList[0].Section : undefined;
+const HeroData = IsHeroFirst ? RenderList[0].data : undefined;
+const Stack = IsHeroFirst ? RenderList.slice(1) : RenderList;
+---
+
+<div class="editorial-layout">
+  <Container>
+    <div class="editorial-page">
+      <div class="editorial-dateline" aria-hidden="true">
+        {data.site.title} &mdash; Portfolio Edition &mdash; Vol. I
+      </div>
+
+      <header class="editorial-masthead">
+        {HeroSection ? (
+          <HeroSection data={HeroData} />
+        ) : (
+          <>
+            <h1 class="editorial-masthead-name">{data.site.name}</h1>
+            <p class="editorial-masthead-subtitle">{data.site.title}</p>
+          </>
+        )}
+      </header>
+
+      <main class="editorial-main">
+        {Stack.map(({ name, Section, data: sectionData }) => (
+          <div class={`editorial-block editorial-block-${name}`}>
+            <Section data={sectionData} />
+          </div>
+        ))}
+      </main>
+    </div>
+  </Container>
+</div>
+</file>
+
+<file path="src/templates/editorial/styles.css">
+/* Editorial — newspaper / magazine layout */
+
+.editorial-layout {
+  padding-block: var(--spacing-section);
+}
+
+.editorial-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.editorial-dateline {
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  letter-spacing: var(--letter-spacing-body);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Masthead with a newspaper double-rule underline */
+.editorial-masthead {
+  border-bottom: var(--border-width) solid var(--color-border);
+  box-shadow: 0 calc(var(--border-width) * 2) 0 var(--color-border);
+  padding-bottom: var(--spacing-gap);
+  padding-top: var(--spacing-gap);
+  text-align: center;
+}
+
+.editorial-masthead .hero-name {
+  font-family: var(--font-heading);
+  letter-spacing: var(--letter-spacing-heading);
+  text-transform: uppercase;
+}
+
+.editorial-masthead-name {
+  font-family: var(--font-heading);
+  letter-spacing: var(--letter-spacing-heading);
+  text-transform: uppercase;
+}
+
+.editorial-masthead-subtitle {
+  color: var(--color-muted);
+}
+
+.editorial-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gap);
+}
+
+/* About: newspaper multi-column text */
+.editorial-block-about .about-description {
+  column-count: 2;
+  column-gap: var(--spacing-gap);
+}
+
+/* Experience: two-column magazine grid with rule-topped cards */
+.editorial-block-experience .experience-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-gap);
+}
+
+.editorial-block-experience .experience-card {
+  background-color: transparent;
+  border: 0;
+  border-top: calc(var(--border-width) * 2) solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--spacing-container);
+}
+
+.editorial-block-experience .role {
+  letter-spacing: var(--letter-spacing-heading);
+  text-transform: uppercase;
+}
+
+/* Projects: magazine cards in a two-column grid */
+.editorial-block-projects .projects-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-gap);
+}
+
+.editorial-block-projects .project-card {
+  background-color: transparent;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  padding: var(--spacing-container);
+}
+
+/* Contact: classified-style box */
+.editorial-block-contact {
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--panel-shadow);
+  padding: var(--spacing-container);
+}
+
+@media (max-width: 640px) {
+  .editorial-block-about .about-description {
+    column-count: 1;
+  }
+
+  .editorial-block-experience .experience-list,
+  .editorial-block-projects .projects-list {
+    grid-template-columns: 1fr;
+  }
+}
+</file>
+
+<file path="src/templates/editorial/template.json">
+{
+  "name": "Editorial",
+  "author": "community",
+  "description": "Newspaper/magazine style with multi-column About and Experience.",
+  "previewImage": "/template-previews/editorial.png"
+}
+</file>
+
+<file path="src/templates/khakis-90s/template.json">
+{
+  "name": "Khakis 90s",
+  "author": "Hazmi Badrunsham",
+  "description": "Vintage catalog cards with offset hard shadows and a retro stamp.",
+  "previewImage": "/template-previews/khakis-90s.png"
+}
+</file>
+
+<file path="src/templates/minimal/template.json">
+{
+  "name": "Minimal",
+  "author": "Hazmi Badrunsham",
+  "description": "Clean single-column layout with subtle surfaces and rounded cards.",
+  "previewImage": "/template-previews/minimal.png"
+}
+</file>
+
+<file path="src/templates/terminal/styles.css">
+/* Terminal — window chrome with prompt-based section bands */
+
+.terminal-layout {
+  padding-block: var(--spacing-section);
+}
+
+.terminal-window {
+  background-color: var(--color-background);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--panel-shadow);
+  overflow: hidden;
+}
+
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-gap);
+  padding: var(--spacing-container);
+  background-color: var(--color-surface);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: var(--radius-sm);
+}
+
+.terminal-dot {
+  width: var(--radius-md);
+  height: var(--radius-md);
+}
+
+.terminal-dot-close {
+  background-color: var(--color-accent);
+}
+
+.terminal-dot-minimize {
+  background-color: var(--color-muted);
+}
+
+.terminal-dot-maximize {
+  background-color: var(--color-border);
+}
+
+.terminal-title {
+  color: var(--color-muted);
+  font-family: var(--font-body);
+}
+
+.terminal-body {
+  padding: var(--spacing-container);
+}
+
+.terminal-session {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gap);
+}
+
+.terminal-commandline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--radius-sm);
+  font-family: var(--font-body);
+}
+
+.terminal-prompt {
+  color: var(--color-accent);
+}
+
+.terminal-command {
+  color: var(--color-muted);
+}
+
+.terminal-cursor {
+  color: var(--color-accent);
+  animation: terminal-blink calc(var(--transition-duration) * 2) step-end infinite;
+}
+
+@keyframes terminal-blink {
+  0%,
+  49.99% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+</file>
+
+<file path="src/templates/terminal/template.json">
+{
+  "name": "Terminal",
+  "author": "community",
+  "description": "Monospace terminal-window chrome with a blinking cursor accent.",
+  "previewImage": "/template-previews/terminal.png"
+}
+</file>
+
+<file path="src/templates/terminal/TerminalLayout.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
+import Container from '../../components/ui/Container.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+  sections: readonly SectionName[];
+}
+
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  name,
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+
+const USER = data.site.name.trim().split(/\s+/)[0]?.toLowerCase() || 'user';
+const DIR = `~/${data.site.name.toLowerCase().replace(/\s+/g, '-')}`;
+const PROMPT = `${USER}@portfolio:~$`;
+
+const COMMANDS: Record<SectionName, string> = {
+  hero: './portfolio --whoami',
+  about: 'cat about.md',
+  skills: 'skills --list',
+  experience: 'cat experience.log',
+  projects: 'ls -la ./projects',
+  contact: 'cat contact.txt',
+  blog: 'cat blog/index.md',
+};
+---
+
+<div class="terminal-layout">
+  <Container>
+    <div class="terminal-window">
+      <div class="terminal-titlebar" aria-hidden="true">
+        <div class="terminal-dots">
+          <span class="terminal-dot terminal-dot-close"></span>
+          <span class="terminal-dot terminal-dot-minimize"></span>
+          <span class="terminal-dot terminal-dot-maximize"></span>
+        </div>
+        <div class="terminal-title">{DIR} — bash</div>
+      </div>
+
+      <div class="terminal-body">
+        {RenderList.map(({ name, Section, data: sectionData }) => (
+          <div class="terminal-session">
+            <div class="terminal-commandline" role="presentation">
+              <span class="terminal-prompt">{PROMPT}</span>
+              <span class="terminal-command">{COMMANDS[name]}</span>
+            </div>
+            <div class="terminal-output">
+              <Section data={sectionData} />
+            </div>
+          </div>
+        ))}
+
+        <div class="terminal-commandline" aria-hidden="true">
+          <span class="terminal-prompt">{PROMPT}</span>
+          <span class="terminal-cursor">▊</span>
+        </div>
+      </div>
+    </div>
+  </Container>
+</div>
+</file>
+
+<file path="src/test/fixtures.ts">
+// Shared minimal fixtures for the TOML schema test suite.
+// Kept loosely typed so tests can omit/add whole TOML tables.
+export const MINIMAL_PORTFOLIO: Record<string, any> = {
+  site: {
+    name: 'Test User',
+    title: 'Software Engineer',
+    bio: 'A short bio.',
+  },
+  about: {
+    description: 'About text.',
+  },
+  skills: [{ category: 'Languages', items: ['TypeScript', 'SQL'] }],
+  experience: [
+    {
+      role: 'Support Engineer',
+      company: 'Acme',
+      period: '2024 - Present',
+      description: 'Support work.',
+    },
+  ],
+  projects: [
+    {
+      name: 'Demo Project',
+      description: 'A project.',
+      tags: ['Astro'],
+    },
+  ],
+  contact: {
+    email: 'test@example.com',
+    socials: [{ name: 'GitHub', url: 'https://github.com' }],
+  },
+};
+
+export const MINIMAL_SITE: Record<string, any> = {
+  template: 'minimal',
+  title: 'Test Site',
+  language: 'en',
+  sections: ['hero', 'about', 'skills', 'experience', 'projects', 'contact'],
+};
+
+export const MINIMAL_THEME: Record<string, any> = {
+  colors: {
+    background: '#ffffff',
+    surface: '#f8fafc',
+    foreground: '#0f172a',
+    muted: '#64748b',
+    accent: '#2563eb',
+    border: '#e2e8f0',
+  },
+  fonts: {
+    heading: 'Inter, system-ui, sans-serif',
+    body: 'Inter, system-ui, sans-serif',
+  },
+  spacing: {
+    section: '4rem',
+    container: '2rem',
+    gap: '1.5rem',
+  },
+  layout: {
+    max_width: '800px',
+  },
+  style: {
+    border_width: '1px',
+    border_radius: '8px',
+    panel_shadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+  },
+};
+</file>
+
+<file path="src/test/schema.test.ts">
+// Vitest test suite for the TOML schema layer (src/lib/schema.ts).
+//
+// Run: npm test (watch mode) or npm run test:run (single run / CI).
+import { describe, expect, it } from 'vitest';
+import {
+  PortfolioSchema,
+  SiteConfigSchema,
+  ThemeConfigSchema,
+  type SiteConfig,
+} from '../lib/schema';
+import { MINIMAL_PORTFOLIO, MINIMAL_SITE, MINIMAL_THEME } from './fixtures';
+
+// --- PortfolioSchema ------------------------------------------------------
+
+describe('PortfolioSchema', () => {
+  it('parses a valid minimal portfolio.toml correctly', () => {
+    const data = PortfolioSchema.parse(MINIMAL_PORTFOLIO);
+
+    expect(data.site.name).toBe('Test User');
+    expect(data.site.title).toBe('Software Engineer');
+    expect(data.about.description).toBe('About text.');
+    expect(data.skills).toHaveLength(1);
+    expect(data.experience?.[0]?.role).toBe('Support Engineer');
+    expect(data.projects?.[0]?.tags).toEqual(['Astro']);
+    expect(data.contact.email).toBe('test@example.com');
+    expect(data.contact.socials).toHaveLength(1);
+  });
+
+  it('applies optional fields when present', () => {
+    const withOptionals = {
+      ...MINIMAL_PORTFOLIO,
+      about: { ...MINIMAL_PORTFOLIO.about, avatar: '/avatar.jpg' },
+      experience: [
+        {
+          ...MINIMAL_PORTFOLIO.experience[0],
+          highlights: ['Did a thing', 'Did another thing'],
+        },
+      ],
+      projects: [{ ...MINIMAL_PORTFOLIO.projects[0], link: 'https://example.com' }],
+    };
+
+    const data = PortfolioSchema.parse(withOptionals);
+
+    expect(data.about.avatar).toBe('/avatar.jpg');
+    expect(data.experience?.[0]?.highlights).toHaveLength(2);
+    expect(data.projects?.[0]?.link).toBe('https://example.com');
+  });
+
+  it('produces a clear Zod error when required fields are missing', () => {
+    const { site, ...withoutSite } = MINIMAL_PORTFOLIO;
+    void site;
+
+    expect(() => PortfolioSchema.parse(withoutSite)).toThrowError(
+      /Invalid input|required|site/i
+    );
+
+    expect(() =>
+      PortfolioSchema.parse({
+        ...MINIMAL_PORTFOLIO,
+        contact: { email: 'not-an-email', socials: [] },
+      })
+    ).toThrowError(/email/i);
+  });
+});
+
+// --- SiteConfigSchema -----------------------------------------------------
+
+describe('SiteConfigSchema', () => {
+  it('parses a valid site.toml and keeps the given section order', () => {
+    const site: SiteConfig = SiteConfigSchema.parse({
+      ...MINIMAL_SITE,
+      sections: ['hero', 'projects', 'contact'],
+    });
+
+    expect(site.template).toBe('minimal');
+    expect(site.sections).toEqual(['hero', 'projects', 'contact']);
+  });
+
+  it('defaults template, language, and sections when omitted', () => {
+    const site: SiteConfig = SiteConfigSchema.parse({ title: 'Test Site' });
+
+    expect(site.template).toBe('minimal');
+    expect(site.language).toBe('en');
+    expect(site.sections).toEqual([
+      'hero',
+      'about',
+      'skills',
+      'experience',
+      'projects',
+      'contact',
+    ]);
+  });
+
+  it('rejects invalid section names in the sections array', () => {
+    expect(() =>
+      SiteConfigSchema.parse({
+        ...MINIMAL_SITE,
+        sections: ['hero', 'not-a-section'],
+      })
+    ).toThrowError(/not-a-section|Invalid option/i);
+  });
+
+  it('rejects a non-array sections value', () => {
+    expect(() =>
+      SiteConfigSchema.parse({
+        ...MINIMAL_SITE,
+        sections: 'hero',
+      })
+    ).toThrowError(/array|Invalid input/i);
+  });
+});
+</file>
+
+<file path="src/test/theme.test.ts">
+// Vitest suite for ThemeConfigSchema defaults (Phase 2 theme tokens).
+import { describe, expect, it } from 'vitest';
+import { ThemeConfigSchema } from '../lib/schema';
+import { MINIMAL_THEME } from './fixtures';
+
+describe('ThemeConfigSchema', () => {
+  it('parses a valid theme.toml', () => {
+    const theme = ThemeConfigSchema.parse(MINIMAL_THEME);
+
+    expect(theme.colors.accent).toBe('#2563eb');
+    expect(theme.spacing.section).toBe('4rem');
+    expect(theme.style.border_radius).toBe('8px');
+  });
+
+  it('defaults new optional fields (fonts details, radius tokens, motion)', () => {
+    const theme = ThemeConfigSchema.parse(MINIMAL_THEME);
+
+    expect(theme.fonts.heading_weight).toBe('700');
+    expect(theme.fonts.body_weight).toBe('400');
+    expect(theme.fonts.heading_letter_spacing).toBe('normal');
+    expect(theme.fonts.body_letter_spacing).toBe('normal');
+    expect(theme.style.radius_sm).toBe('4px');
+    expect(theme.style.radius_md).toBe('8px');
+    expect(theme.style.radius_lg).toBe('16px');
+    expect(theme.motion.duration).toBe('200ms');
+    expect(theme.motion.easing).toBe('ease-out');
+  });
+
+  it('applies defaults when whole optional tables are missing', () => {
+    const { fonts, motion, ...withoutTables } = MINIMAL_THEME;
+    void fonts;
+    void motion;
+
+    const theme = ThemeConfigSchema.parse(withoutTables);
+
+    expect(theme.fonts.heading).toBe('system-ui, -apple-system, sans-serif');
+    expect(theme.fonts.body).toBe('system-ui, -apple-system, sans-serif');
+    expect(theme.motion.duration).toBe('200ms');
+    expect(theme.motion.easing).toBe('ease-out');
+  });
+
+  it('keeps explicitly-provided values instead of defaults', () => {
+    const theme = ThemeConfigSchema.parse({
+      ...MINIMAL_THEME,
+      fonts: {
+        ...MINIMAL_THEME.fonts,
+        heading: 'Space Grotesk',
+        heading_weight: '600',
+      },
+      style: {
+        ...MINIMAL_THEME.style,
+        radius_lg: '24px',
+      },
+      motion: {
+        duration: '300ms',
+        easing: 'linear',
+      },
+    });
+
+    expect(theme.fonts.heading).toBe('Space Grotesk');
+    expect(theme.fonts.heading_weight).toBe('600');
+    expect(theme.style.radius_lg).toBe('24px');
+    expect(theme.motion.duration).toBe('300ms');
+  });
+
+  it('produces a clear Zod error when required token tables are missing', () => {
+    const { colors, ...withoutColors } = MINIMAL_THEME;
+    void colors;
+
+    expect(() => ThemeConfigSchema.parse(withoutColors)).toThrowError(
+      /colors|Invalid input/i
+    );
+  });
+});
+</file>
+
+<file path="src/content.config.ts">
+// @ts-check
+import { defineCollection, z } from 'astro:content';
+
+const blog = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
+      .transform((s) => new Date(s)),
+    description: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    published: z.boolean().default(true),
+  }),
+});
+
+export const collections = { blog };
+</file>
+
+<file path="public/favicon.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 128 128">
+    <path d="M50.4 78.5a75.1 75.1 0 0 0-28.5 6.9l24.2-65.7c.7-2 1.9-3.2 3.4-3.2h29c1.5 0 2.7 1.2 3.4 3.2l24.2 65.7s-11.6-7-28.5-7L67 45.5c-.4-1.7-1.6-2.8-2.9-2.8-1.3 0-2.5 1.1-2.9 2.7L50.4 78.5Zm-1.1 28.2Zm-4.2-20.2c-2 6.6-.6 15.8 4.2 20.2a17.5 17.5 0 0 1 .2-.7 5.5 5.5 0 0 1 5.7-4.5c2.8.1 4.3 1.5 4.7 4.7.2 1.1.2 2.3.2 3.5v.4c0 2.7.7 5.2 2.2 7.4a13 13 0 0 0 5.7 4.9v-.3l-.2-.3c-1.8-5.6-.5-9.5 4.4-12.8l1.5-1a73 73 0 0 0 3.2-2.2 16 16 0 0 0 6.8-11.4c.3-2 .1-4-.6-6l-.8.6-1.6 1a37 37 0 0 1-22.4 2.7c-5-.7-9.7-2-13.2-6.2Z" />
+    <style>
+        path { fill: #000; }
+        @media (prefers-color-scheme: dark) {
+            path { fill: #FFF; }
+        }
+    </style>
+</svg>
+</file>
+
+<file path="src/components/sections/About.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+
+interface Props {
+  data: PortfolioData['about'];
+}
+const { data } = Astro.props;
+---
+<section class="section-about">
+  <SectionTitle title="About" />
+  <div class="about-content">
+    {data.avatar && (
+      <img 
+        src={data.avatar} 
+        alt="Profile photo" 
+        class="about-avatar" 
+        loading="eager"
+      />
+    )}
+    <p class="about-description">{data.description}</p>
+  </div>
+</section>
+
+<style>
+  .section-about {
+    margin-bottom: var(--spacing-section);
+  }
+  .about-content {
+    display: flex;
+    gap: var(--spacing-gap);
+    align-items: flex-start;
+  }
+  .about-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: var(--border-radius);
+    object-fit: cover;
+    border: var(--border-width) solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .about-description {
+    color: var(--color-foreground);
+    line-height: 1.6;
+  }
+  @media (max-width: 640px) {
+    .about-content {
+      flex-direction: column;
+    }
+  }
+</style>
+</file>
+
+<file path="src/components/sections/Contact.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+
+interface Props {
+  data: PortfolioData['contact'];
+}
+const { data } = Astro.props;
+---
+<section class="section-contact">
+  <SectionTitle title="Contact" />
+  <p class="contact-email">
+    Email: <a href={`mailto:${data.email}`}>{data.email}</a>
+  </p>
+  <div class="contact-socials">
+    {data.socials.map((s) => (
+      <a href={s.url} target="_blank" rel="noopener noreferrer" class="social-link">
+        {s.name}
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-contact {
+    margin-bottom: var(--spacing-section);
+  }
+  .contact-email {
+    font-size: 1.05rem;
+    margin-bottom: 1rem;
+  }
+  .contact-socials {
+    display: flex;
+    gap: var(--spacing-gap);
+  }
+</style>
+</file>
+
+<file path="src/components/sections/Experience.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+
+interface Props {
+  data: PortfolioData['experience'];
+}
+const { data } = Astro.props;
+---
+<section class="section-experience">
+  <SectionTitle title="Work Experience" />
+  <div class="experience-list">
+    {data.map((item) => (
+      <article class="experience-card">
+        <div class="experience-header">
+          <div>
+            <h3 class="role">{item.role}</h3>
+            <p class="company">{item.company}</p>
+          </div>
+          <span class="period">{item.period}</span>
+        </div>
+        <p class="description">{item.description}</p>
+        {item.highlights && item.highlights.length > 0 && (
+          <ul class="highlights">
+            {item.highlights.map((h) => <li>{h}</li>)}
+          </ul>
+        )}
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-experience {
+    margin-bottom: var(--spacing-section);
+  }
+  .experience-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gap);
+  }
+  .experience-card {
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--panel-shadow);
+  }
+  .experience-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+  .role { font-size: 1.1rem; font-weight: 600; }
+  .company { color: var(--color-accent); font-size: 0.95rem; }
+  .period { color: var(--color-muted); font-size: 0.875rem; }
+  .description { margin-top: 0.5rem; font-size: 0.95rem; }
+  .highlights {
+    margin-top: 0.5rem;
+    padding-left: 1.25rem;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+  }
+</style>
+</file>
+
+<file path="src/components/sections/Hero.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+interface Props {
+  data: PortfolioData['site'];
+}
+const { data } = Astro.props;
+---
+<header class="section-hero">
+  <h1 class="hero-name">{data.name}</h1>
+  <p class="hero-title">{data.title}</p>
+  <p class="hero-bio">{data.bio}</p>
+</header>
+
+<style>
+  .section-hero {
+    margin-bottom: var(--spacing-section);
+  }
+  .hero-name {
+    font-size: 2.5rem;
+    font-weight: 800;
+  }
+  .hero-title {
+    font-size: 1.25rem;
+    color: var(--color-accent);
+    margin-top: 0.25rem;
+  }
+  .hero-bio {
+    margin-top: 1rem;
+    color: var(--color-muted);
+    font-size: 1.1rem;
+  }
+</style>
+</file>
+
+<file path="src/components/sections/Projects.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+import Tag from '../ui/Tag.astro';
+
+interface Props {
+  data: PortfolioData['projects'];
+}
+const { data } = Astro.props;
+---
+<section class="section-projects">
+  <SectionTitle title="Projects" />
+  <div class="projects-list">
+    {data.map((project) => (
+      <article class="project-card">
+        <div class="project-header">
+          <h3 class="project-name">{project.name}</h3>
+          {project.link && (
+            <a href={project.link} target="_blank" rel="noopener noreferrer" class="project-link">
+              View &rarr;
+            </a>
+          )}
+        </div>
+        <p class="project-description">{project.description}</p>
+        <div class="project-tags">
+          {project.tags.map((tag) => <Tag label={tag} />)}
+        </div>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-projects {
+    margin-bottom: var(--spacing-section);
+  }
+  .projects-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gap);
+  }
+  .project-card {
+    background: var(--color-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--panel-shadow);
+  }
+  .project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .project-name { font-size: 1.1rem; font-weight: 600; }
+  .project-description { font-size: 0.95rem; color: var(--color-muted); }
+  .project-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+</style>
+</file>
+
+<file path="src/components/sections/Skills.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import SectionTitle from '../ui/SectionTitle.astro';
+import Tag from '../ui/Tag.astro';
+
+interface Props {
+  data: PortfolioData['skills'];
+}
+const { data } = Astro.props;
+---
+<section class="section-skills">
+  <SectionTitle title="Skills & Tools" />
+  <div class="skills-grid">
+    {data.map((group) => (
+      <div class="skill-group">
+        <h3 class="skill-category">{group.category}</h3>
+        <div class="skill-items">
+          {group.items.map((item) => (
+            <Tag label={item} />
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .section-skills {
+    margin-bottom: var(--spacing-section);
+  }
+  .skills-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gap);
+  }
+  .skill-category {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .skill-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+</style>
+</file>
+
+<file path="src/components/ui/Container.astro">
+---
+---
+<div class="ui-container">
+  <slot />
+</div>
+
+<style>
+  .ui-container {
+    max-width: var(--layout-max-width);
+    margin-inline: auto;
+    padding-inline: var(--spacing-container);
+  }
+</style>
+</file>
+
+<file path="src/components/ui/SectionTitle.astro">
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<h2 class="ui-section-title">{title}</h2>
+
+<style>
+  .ui-section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-gap);
+    border-bottom: var(--border-width) solid var(--color-border);
+    padding-bottom: 0.5rem;
+  }
+</style>
+</file>
+
+<file path="src/components/ui/Tag.astro">
+---
+interface Props {
+  label: string;
+}
+const { label } = Astro.props;
+---
+<span class="ui-tag">{label}</span>
+
+<style>
+  .ui-tag {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.8125rem;
+    background-color: var(--color-surface);
+    color: var(--color-muted);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--border-radius);
+  }
+</style>
+</file>
+
+<file path="src/config/site.toml">
+template = "dark-japanese"
+title = "Hazmi"
+language = "en"
+
+# Optional. Order controls render order; omissions hide a section.
+# Valid names: hero, about, skills, experience, projects, contact
+sections = ["hero","about","skills","experience","projects","contact"]
+</file>
+
+<file path="src/config/theme.toml">
+# khakis-90s
+# [colors]
+# background = "#f4efe6"       # Warm vintage beige paper
+# surface = "#ebdccb"          # Sand/Khaki card background
+# surface_hover = "#e2cfb9"    # Darker khaki hover
+# foreground = "#2b261f"       # Deep warm espresso ink
+# muted = "#6e6252"           # Muted olive-tan text
+# accent = "#a34828"          # 90s Rust / Terracotta red
+# accent_muted = "#a3482820"   # Muted rust tint
+# border = "#2b261f"          # Dark crisp border outlines
+# selection = "#a34828"
+
+# [fonts]
+# heading = "'Courier New', Courier, monospace, sans-serif"
+# body = "system-ui, -apple-system, sans-serif"
+
+# [spacing]
+# section = "2.5rem"
+# container = "1.5rem"
+# gap = "1.25rem"
+
+# [layout]
+# max_width = "750px"
+
+# [style]
+# border_width = "2px"
+# border_radius = "4px"
+# panel_shadow = "4px 4px 0px #2b261f"
+
+# minimal
+[colors]
+background = "#ffffff"       # Pure clean white
+surface = "#f8fafc"          # Subtle off-white surface
+surface_hover = "#f1f5f9"    # Soft light gray hover state
+foreground = "#0f172a"       # Deep slate black text
+muted = "#64748b"           # Balanced gray for secondary text
+accent = "#2563eb"          # Electric blue accent
+accent_muted = "#2563eb15"   # Ultra-light blue tint for tags
+border = "#e2e8f0"          # Light border lines
+selection = "#2563eb"        # Accent highlight color
+
+[fonts]
+heading = "Inter, system-ui, -apple-system, sans-serif"
+body = "Inter, system-ui, -apple-system, sans-serif"
+heading_weight = "700"
+body_weight = "400"
+heading_letter_spacing = "normal"
+body_letter_spacing = "normal"
+
+[spacing]
+section = "4rem"
+container = "2rem"
+gap = "1.5rem"
+
+[layout]
+max_width = "800px"
+
+[style]
+border_width = "1px"
+border_radius = "8px"
+radius_sm = "4px"
+radius_md = "8px"
+radius_lg = "16px"
+panel_shadow = "0 1px 3px 0 rgba(0, 0, 0, 0.05)"
+
+[motion]
+duration = "200ms"
+easing = "ease-out"
+</file>
+
+<file path="src/lib/config.ts">
+import fs from 'node:fs';
+import path from 'node:path';
+import TOML from '@iarna/toml';
+import {
+  SiteConfigSchema,
+  ThemeConfigSchema,
+  PortfolioSchema,
+  type SiteConfig,
+  type ThemeConfig,
+  type PortfolioData,
+} from './schema';
+
+function readTomlFile(filename: string) {
+  const filePath = path.resolve(process.cwd(), `src/config/${filename}`);
+  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  return TOML.parse(fileContent);
+}
+
+export function getSiteConfig(): SiteConfig {
+  const rawData = readTomlFile('site.toml');
+  return SiteConfigSchema.parse(rawData);
+}
+
+export function getThemeConfig(): ThemeConfig {
+  const rawData = readTomlFile('theme.toml');
+  return ThemeConfigSchema.parse(rawData);
+}
+
+function portfolioFilenameForLang(lang: string): string {
+  // Default language uses the canonical portfolio.toml. Any other supported
+  // language uses an alternate file: portfolio.es.toml, portfolio.fr.toml, etc.
+  // Falls back to portfolio.toml if the localized file does not exist.
+  if (lang === 'en') return 'portfolio.toml';
+  const candidate = `portfolio.${lang}.toml`;
+  const filePath = path.resolve(process.cwd(), `src/config/${candidate}`);
+  if (fs.existsSync(filePath)) return candidate;
+  return 'portfolio.toml';
+}
+
+export function getPortfolioData(): PortfolioData {
+  const site = SiteConfigSchema.parse(readTomlFile('site.toml'));
+  const filename = portfolioFilenameForLang(site.language);
+  const rawData = readTomlFile(filename);
+  return PortfolioSchema.parse(rawData);
+}
+
+/**
+ * Returns the blog posts collection at build time, or `undefined` when the
+ * blog feature is disabled. Callers use this only inside Astro pages/infra —
+ * it is never called during the CLI/config-time load path.
+ */
+export async function getBlogPosts(): Promise<Awaited<ReturnType<typeof import('astro:content').getCollection>> | undefined> {
+  const site = SiteConfigSchema.parse(readTomlFile('site.toml'));
+  if (!site.blog?.enabled) return undefined;
+
+  // Content collections are only available inside Astro's build/runtime. If
+  // this module is imported outside that context (e.g. CLI), return nothing
+  // rather than crashing.
+  try {
+    const { getCollection } = await import('astro:content');
+    const all = await getCollection('blog');
+    return all.sort((a, b) =>
+      new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+export type BlogPost = Awaited<ReturnType<typeof import('astro:content').getCollection>>[number];
+</file>
+
+<file path="src/lib/schema.ts">
+import { z } from 'zod';
+
+// --- Section order & visibility ---
+// Shared with src/lib/sections.ts and every template layout. Users can
+// reorder or hide sections via the `sections` array in site.toml.
+export const SECTION_NAMES = [
+  'hero',
+  'about',
+  'skills',
+  'experience',
+  'projects',
+  'contact',
+  'blog',
+] as const;
+
+// Example error message (Zod 4): Invalid option: expected one of "hero"|"about"|...
+export const SectionNameSchema = z.enum(SECTION_NAMES);
+
+export type SectionName = (typeof SECTION_NAMES)[number];
+
+/** Backwards-compatible default: the order every template rendered before this feature. */
+export const DEFAULT_SECTION_ORDER: readonly SectionName[] = SECTION_NAMES.filter(
+  (n) => n !== 'blog'
+);
+
+// --- Common language codes users may configure ---
+export const KNOWN_LANG_CODES = [
+  'en',
+  'es',
+  'fr',
+  'de',
+  'pt',
+  'it',
+  'ja',
+  'ko',
+  'zh',
+  'ar',
+  'hi',
+  'ru',
+  'nl',
+  'pl',
+  'tr',
+  'sv',
+  'da',
+  'fi',
+  'nb',
+  'ro',
+  'hu',
+  'cs',
+  'el',
+  'th',
+  'vi',
+  'id',
+  'ms',
+  'tl',
+  'uk',
+  'he',
+  'bn',
+  'ta',
+  'te',
+  'mr',
+  'gu',
+  'kn',
+  'ml',
+  'pa',
+  'ur',
+  'fa',
+  'sw',
+  'af',
+  'ca',
+  'eu',
+  'gl',
+  'sq',
+  'mk',
+  'sr',
+  'bg',
+  'hr',
+  'sk',
+  'sl',
+  'lt',
+  'lv',
+  'et',
+  'is',
+  'cy',
+  'ga',
+  'mt',
+  'la',
+] as const;
+
+// --- Site Config Schema ---
+export const SiteConfigSchema = z.object({
+  template: z.string().default('minimal'),
+  title: z.string(),
+  language: z
+    .string()
+    .default('en')
+    .refine(
+      (v: string) => KNOWN_LANG_CODES.includes(v as (typeof KNOWN_LANG_CODES)[number]),
+      {
+        message: `Unsupported language code "${'v'}". Use one of: ${KNOWN_LANG_CODES.join(', ')}.`,
+        path: ['language'],
+      }
+    ),
+  sections: z
+    .array(SectionNameSchema)
+    .default([...DEFAULT_SECTION_ORDER])
+    .describe(
+      'Ordered list of sections to render; omit a section to hide it. ' +
+        'Allowed: hero, about, skills, experience, projects, contact (blog appears automatically when enabled).'
+    ),
+  // --- Optional features (all gated; absent = no effect) ---
+  blog: z
+    .object({
+      enabled: z.boolean().default(false),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      postsPerPage: z.number().int().min(1).default(10),
+    })
+    .default({ enabled: false, postsPerPage: 10 })
+    .describe('Blog section. Only active when enabled = true and src/content/blog/ has entries.'),
+  seo: z
+    .object({
+      generateOgImage: z.boolean().default(false),
+      siteName: z.string().optional(),
+      separator: z.string().default(' | '),
+    })
+    .default({ generateOgImage: false, separator: ' | ' })
+    .describe(
+      'SEO helpers. generateOgImage = true enables an automated social-share image via sharp on every page.'
+    ),
+  i18n: z
+    .object({
+      locales: z.array(z.string().length(2)).optional(),
+      pickerLabel: z.string().default('Language'),
+    })
+    .nullable()
+    .default(null)
+    .describe(
+      'When locales is declared (e.g. ["en", "es"]), a language picker is shown and alternate portfolio.<lang>.toml files are supported.'
+    ),
+  analytics: z
+    .object({
+      provider: z.enum(['none', 'plausible', 'umami']).default('none'),
+      domain: z.string().optional(),
+      scriptUrl: z.string().url().optional(),
+    })
+    .default({ provider: 'none' })
+    .describe(
+      "Analytics provider. 'none' (default) injects nothing. 'plausible' uses the official script; 'umami' uses its self-hosted script shape."
+    ),
+});
+
+// --- Theme Config Schema ---
+export const ThemeConfigSchema = z.object({
+  colors: z.object({
+    background: z.string(),
+    surface: z.string(),
+    surface_hover: z.string().optional(),
+    foreground: z.string(),
+    muted: z.string(),
+    accent: z.string(),
+    accent_muted: z.string().optional(),
+    border: z.string(),
+    selection: z.string().optional(),
+  }),
+  fonts: z
+    .object({
+      heading: z.string().default('system-ui, -apple-system, sans-serif'),
+      body: z.string().default('system-ui, -apple-system, sans-serif'),
+      heading_weight: z.string().default('700'),
+      body_weight: z.string().default('400'),
+      heading_letter_spacing: z.string().default('normal'),
+      body_letter_spacing: z.string().default('normal'),
+    })
+    .default({
+      heading: 'system-ui, -apple-system, sans-serif',
+      body: 'system-ui, -apple-system, sans-serif',
+      heading_weight: '700',
+      body_weight: '400',
+      heading_letter_spacing: 'normal',
+      body_letter_spacing: 'normal',
+    }),
+  spacing: z.object({
+    section: z.string(),
+    container: z.string(),
+    gap: z.string(),
+  }),
+  layout: z.object({
+    max_width: z.string(),
+  }),
+  style: z.object({
+    border_width: z.string(),
+    border_radius: z.string(),
+    radius_sm: z.string().default('4px'),
+    radius_md: z.string().default('8px'),
+    radius_lg: z.string().default('16px'),
+    panel_shadow: z.string(),
+  }),
+  motion: z
+    .object({
+      duration: z.string().default('200ms'),
+      easing: z.string().default('ease-out'),
+    })
+    .default({ duration: '200ms', easing: 'ease-out' }),
+});
+
+// --- Portfolio Content Schema ---
+export const PortfolioSchema = z.object({
+  site: z.object({
+    name: z.string(),
+    title: z.string(),
+    bio: z.string(),
+  }),
+  about: z.object({
+    avatar: z.string().optional(),
+    description: z.string(),
+  }),
+  skills: z.array(
+    z.object({
+      category: z.string(),
+      items: z.array(z.string()),
+    })
+  ),
+  experience: z.array(
+    z.object({
+      role: z.string(),
+      company: z.string(),
+      period: z.string(),
+      description: z.string(),
+      highlights: z.array(z.string()).optional(),
+    })
+  ),
+  projects: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      tags: z.array(z.string()),
+      link: z.string().optional(),
+    })
+  ),
+  contact: z.object({
+    email: z.string().email(),
+    socials: z.array(
+      z.object({
+        name: z.string(),
+        url: z.string().url(),
+      })
+    ),
+  }),
+  // Optional. When present, values here take precedence over site.toml blog settings.
+  blog: z
+    .object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+    })
+    .optional(),
+});
+
+// Inferred TypeScript Types
+export type SiteConfig = z.infer<typeof SiteConfigSchema>;
+export type ThemeConfig = z.infer<typeof ThemeConfigSchema>;
+export type PortfolioData = z.infer<typeof PortfolioSchema>;
+</file>
+
+<file path="src/lib/template.ts">
+// src/lib/template.ts
+// Templates are auto-discovered from src/templates/<key>/:
+//   <Key>Layout.astro + styles.css  → the rendered layout
+//   template.json                    → metadata (name, author, description, previewImage)
+
+const layoutModules = import.meta.glob('../templates/*/*Layout.astro', { eager: true });
+const metadataModules = import.meta.glob('../templates/*/template.json', { eager: true });
+
+export interface TemplateMeta {
+  name: string;
+  author: string;
+  description: string;
+  previewImage: string;
+}
+
+export interface TemplateCatalogEntry {
+  key: string;
+  meta: TemplateMeta;
+}
+
+export type TemplateKey = string;
+
+/** Normalizes glob paths (backslashes on Windows) and extracts the template folder name. */
+function templateKeyFromPath(modulePath: string): string | null {
+  const match = modulePath.replace(/\\/g, '/').match(/\/templates\/([^/]+)\//);
+  return match ? match[1] : null;
+}
+
+/** Unwraps the default export of a glob'ed module. */
+function resolveModule<T>(mod: unknown): T {
+  if (typeof mod === 'object' && mod !== null && 'default' in mod) {
+    const candidate = (mod as { default?: unknown }).default;
+    return (candidate ?? mod) as T;
+  }
+  return mod as T;
+}
+
+const layouts: Record<string, any> = {};
+const metadata: Record<string, TemplateMeta> = {};
+
+for (const path in layoutModules) {
+  const key = templateKeyFromPath(path);
+  if (key) layouts[key] = resolveModule<any>(layoutModules[path]);
+}
+
+for (const path in metadataModules) {
+  const key = templateKeyFromPath(path);
+  if (key) metadata[key] = resolveModule<TemplateMeta>(metadataModules[path]);
+}
+
+/** key → layout component (kept for backwards compatibility with existing callers). */
+export const TEMPLATES: Record<string, any> = layouts;
+
+export function getTemplateKeys(): string[] {
+  return Object.keys(layouts).sort();
+}
+
+export function getTemplateMetadata(key: string): TemplateMeta | undefined {
+  return metadata[key];
+}
+
+/** Full catalog (key + metadata) for galleries, pickers, etc. */
+export function getTemplateCatalog(): TemplateCatalogEntry[] {
+  return getTemplateKeys().map((key) => ({
+    key,
+    meta: metadata[key] ?? { name: key, author: 'unknown', description: '', previewImage: '' },
+  }));
+}
+</file>
+
+<file path="src/lib/tokens.ts">
+import type { ThemeConfig } from './schema';
+
+export const FALLBACK_FONT_STACK = 'system-ui, -apple-system, sans-serif';
+
+export interface FontSelection {
+  /** Full CSS font-family stack used for the --font-heading token. */
+  headingStack: string;
+  /** Full CSS font-family stack used for the --font-body token. */
+  bodyStack: string;
+  /** Google Fonts families to load via <link>, when configured by bare name. */
+  googleFonts: { heading?: string; body?: string };
+}
+
+/** A bare name (no comma) is treated as a Google Fonts family; a comma list is a raw CSS stack. */
+function isGoogleFontName(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.length > 0 && !trimmed.includes(',');
+}
+
+/** Build the Google Fonts CSS2 URL for a single family name. */
+export function googleFontCssUrl(family: string): string {
+  const encoded = family.trim().replace(/\s+/g, '+');
+  return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
+}
+
+/**
+ * Resolves the configured [fonts] table into CSS stacks:
+ * - comma-separated value  → used as-is (no external request)
+ * - bare font name         → Google Fonts <link> + `'<name>', system fallback` stack
+ */
+export function resolveFontSelection(theme: ThemeConfig): FontSelection {
+  let headingStack = theme.fonts.heading.trim();
+  let bodyStack = theme.fonts.body.trim();
+  const googleFonts: { heading?: string; body?: string } = {};
+
+  if (isGoogleFontName(headingStack)) {
+    googleFonts.heading = headingStack;
+    headingStack = `'${headingStack}', ${FALLBACK_FONT_STACK}`;
+  }
+
+  if (isGoogleFontName(bodyStack)) {
+    googleFonts.body = bodyStack;
+    bodyStack = `'${bodyStack}', ${FALLBACK_FONT_STACK}`;
+  }
+
+  return { headingStack, bodyStack, googleFonts };
+}
+
+export function generateCssVariables(theme: ThemeConfig): string {
+  const { headingStack, bodyStack } = resolveFontSelection(theme);
+  return `
+    --color-background: ${theme.colors.background};
+    --color-surface: ${theme.colors.surface};
+    --color-foreground: ${theme.colors.foreground};
+    --color-muted: ${theme.colors.muted};
+    --color-accent: ${theme.colors.accent};
+    --color-border: ${theme.colors.border};
+
+    --font-heading: ${headingStack};
+    --font-body: ${bodyStack};
+    --font-weight-heading: ${theme.fonts.heading_weight};
+    --font-weight-body: ${theme.fonts.body_weight};
+    --letter-spacing-heading: ${theme.fonts.heading_letter_spacing};
+    --letter-spacing-body: ${theme.fonts.body_letter_spacing};
+
+    --spacing-section: ${theme.spacing.section};
+    --spacing-container: ${theme.spacing.container};
+    --spacing-gap: ${theme.spacing.gap};
+
+    --layout-max-width: ${theme.layout.max_width};
+
+    --border-width: ${theme.style.border_width};
+    --border-radius: ${theme.style.border_radius};
+    --radius-sm: ${theme.style.radius_sm};
+    --radius-md: ${theme.style.radius_md};
+    --radius-lg: ${theme.style.radius_lg};
+
+    --transition-duration: ${theme.motion.duration};
+    --transition-easing: ${theme.motion.easing};
+
+    --panel-shadow: ${theme.style.panel_shadow};
+  `.trim();
+}
+</file>
+
+<file path="src/styles/global.css">
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-foreground);
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+/* Custom Text Selection using Theme Tokens */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-background);
+}
+
+/* Custom Minimalist Scrollbar using Theme Tokens */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--border-radius);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+</file>
+
+<file path="src/styles/reset.css">
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+</file>
+
+<file path="src/templates/dark-japanese/DarkJapaneseLayout.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
+import Container from '../../components/ui/Container.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+  sections: readonly SectionName[];
+}
+
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  name,
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+
+// When the configured order starts with hero, keep the original composition:
+// hero in its own bordered header, the rest stacked inside <main>.
+const IsHeroFirst = RenderList[0]?.name === 'hero';
+const HeroSection = IsHeroFirst ? RenderList[0].Section : undefined;
+const HeroData = IsHeroFirst ? RenderList[0].data : undefined;
+const Stack = IsHeroFirst ? RenderList.slice(1) : RenderList;
+---
+
+<div class="japanese-layout">
+  <!-- Subtle decorative Hanko / Japanese stamp accent element -->
+  <div class="hanko-seal" aria-hidden="true">ポートフォリオ</div>
+
+  <Container>
+    <div class="japanese-frame">
+      {HeroSection && (
+        <header class="japanese-hero-wrapper">
+          <HeroSection data={HeroData} />
+        </header>
+      )}
+
+      <main class="japanese-main">
+        {Stack.map(({ name, Section, data: sectionData }) => (
+          <div
+            class={name === 'hero'
+              ? 'japanese-hero-wrapper'
+              : 'japanese-section-wrapper'}
+          >
+            <Section data={sectionData} />
+          </div>
+        ))}
+      </main>
+    </div>
+  </Container>
+</div>
+</file>
+
+<file path="src/templates/dark-japanese/styles.css">
+/* Dark Japanese Aesthetic Styles */
+
+.japanese-layout {
+  position: relative;
+  min-height: 100vh;
+  padding-block: var(--spacing-section);
+  overflow-x: hidden;
+}
+
+/* Background atmospheric subtle grid pattern */
+.japanese-layout::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+                    linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Traditional Red/Accent Hanko Seal (top right corner decor) */
+.hanko-seal {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  writing-mode: vertical-rl;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  color: var(--color-accent);
+  border: var(--border-width) solid var(--color-accent);
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--border-radius);
+  opacity: 0.7;
+  user-select: none;
+}
+
+/* Central frame with minimalist Japanese borders */
+.japanese-frame {
+  position: relative;
+  z-index: 1;
+  border-left: calc(var(--border-width) * 2) solid var(--color-accent);
+  padding-left: var(--spacing-container);
+}
+
+.japanese-hero-wrapper {
+  position: relative;
+  margin-bottom: calc(var(--spacing-section) * 1.25);
+  padding-bottom: var(--spacing-gap);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.japanese-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-section);
+}
+
+/* Minimalist section cards with clean hover state */
+.japanese-section-wrapper {
+  position: relative;
+  transition: transform var(--transition-duration) var(--transition-easing);
+}
+
+.japanese-section-wrapper:hover {
+  transform: translateX(4px);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .hanko-seal {
+    display: none;
+  }
+  
+  .japanese-frame {
+    padding-left: calc(var(--spacing-container) / 2);
+  }
+}
+</file>
+
+<file path="src/templates/khakis-90s/Khakis90sLayout.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
+import Container from '../../components/ui/Container.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+  sections: readonly SectionName[];
+}
+
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  name,
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+
+// Keep the hero in its highlighted catalog card when it leads the order.
+const IsHeroFirst = RenderList[0]?.name === 'hero';
+const HeroSection = IsHeroFirst ? RenderList[0].Section : undefined;
+const HeroData = IsHeroFirst ? RenderList[0].data : undefined;
+const Stack = IsHeroFirst ? RenderList.slice(1) : RenderList;
+---
+
+<div class="khakis-retro-layout">
+  <Container>
+    <div class="vintage-paper-container">
+      <!-- 90s Catalog Header Stamp -->
+      <div class="retro-badge" aria-hidden="true">
+        EST. 1990 • CLASSIC EDITION
+      </div>
+
+      {HeroSection && (
+        <header class="retro-hero-card">
+          <HeroSection data={HeroData} />
+        </header>
+      )}
+
+      <main class="retro-main-stack">
+        {Stack.map(({ name, Section, data: sectionData }) => (
+          <section class="retro-card">
+            <Section data={sectionData} />
+          </section>
+        ))}
+      </main>
+    </div>
+  </Container>
+</div>
+</file>
+
+<file path="src/templates/khakis-90s/styles.css">
+/* 90s Khakis Retro Aesthetic Styles */
+
+.khakis-retro-layout {
+  padding-block: var(--spacing-section);
+  position: relative;
+}
+
+/* Base canvas wrapper */
+.vintage-paper-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gap);
+}
+
+/* Vintage top tag stamp */
+.retro-badge {
+  align-self: flex-start;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.125em;
+  color: var(--color-background);
+  background-color: var(--color-accent);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius);
+  border: var(--border-width) solid var(--color-foreground);
+  box-shadow: 2px 2px 0px var(--color-foreground);
+  text-transform: uppercase;
+}
+
+/* Hero Section override styling */
+.retro-hero-card {
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: calc(var(--spacing-container) * 1.25);
+  box-shadow: 4px 4px 0px var(--color-foreground);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Main card stack */
+.retro-main-stack {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-gap) * 1.25);
+}
+
+/* Individual Content Cards with 90s tactile drop shadows */
+.retro-card {
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-container);
+  box-shadow: var(--panel-shadow, 4px 4px 0px var(--color-border));
+  transition:
+    transform var(--transition-duration) var(--transition-easing),
+    box-shadow var(--transition-duration) var(--transition-easing);
+}
+
+.retro-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--color-foreground);
+}
+
+/* Subtly offset headings inside cards */
+.retro-card h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Mobile responsive padding adjustments */
+@media (max-width: 640px) {
+  .retro-badge {
+    font-size: 0.65rem;
+  }
+  
+  .retro-card {
+    box-shadow: 3px 3px 0px var(--color-foreground);
+  }
+}
+</file>
+
+<file path="src/templates/minimal/MinimalLayout.astro">
+---
+import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
+import Container from '../../components/ui/Container.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+  sections: readonly SectionName[];
+}
+
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+---
+
+<div class="minimal-layout">
+  <Container>
+    <main class="minimal-main">
+      {RenderList.map(({ Section, data: sectionData }) => (
+        <Section data={sectionData} />
+      ))}
+    </main>
+  </Container>
+</div>
+</file>
+
+<file path="src/templates/minimal/styles.css">
+.minimal-layout {
+  padding-block: var(--spacing-section);
+}
+
+.minimal-main {
+  display: flex;
+  flex-direction: column;
+}
+</file>
+
+<file path="src/types/portfolio.ts">
+export type { SiteConfig, ThemeConfig, PortfolioData } from '../lib/schema';
+</file>
+
+<file path=".gitignore">
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+</file>
+
+<file path="AGENTS.md">
+## Development
+
+When starting the dev server, use background mode:
+
+```
+astro dev --background
+```
+
+Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+
+## Documentation
+
+Full documentation: https://docs.astro.build
+
+Consult these guides before working on related tasks:
+
+- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
+- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
+- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
+- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
+- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
+- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+</file>
+
+<file path="astro.config.mjs">
+// @ts-check
+import { defineConfig } from 'astro/config';
+import ogIntegration from './src/lib/og-integration';
+
+// https://astro.build/config
+export default defineConfig({
+  integrations: [ogIntegration()],
+});
+</file>
+
+<file path="CLAUDE.md">
+## Development
+
+When starting the dev server, use background mode:
+
+```
+astro dev --background
+```
+
+Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+
+## Documentation
+
+Full documentation: https://docs.astro.build
+
+Consult these guides before working on related tasks:
+
+- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
+- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
+- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
+- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
+- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
+- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+</file>
+
+<file path="tsconfig.json">
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
+}
+</file>
+
+<file path="src/config/portfolio.toml">
+[site]
+name = "Hazmi"
+title = "Application Support Engineer"
+bio = "Specializing in software support, SQL debugging, system permissions, and building internal automation tools."
+
+[about]
+avatar = "/avatar.jpg"
+description = "Application Support Intern focusing on automated workflows, database query optimization, and integration scripts. Experienced with JavaScript, SQL, and API integrations."
+
+[[skills]]
+category = "Languages & Web"
+items = ["JavaScript", "SQL", "HTML/CSS", "TypeScript"]
+
+[[skills]]
+category = "Tools & Infrastructure"
+items = ["GitLab API", "PostgreSQL", "Linux", "Docker", "REST APIs"]
+
+[[skills]]
+category = "Focus Areas"
+items = ["Internal Automation", "Permission Control", "Log Translation"]
+
+[[experience]]
+role = "Application Support Intern"
+company = "Datum Clearmind SDN BHD"
+period = "2026 - Present"
+description = "Developed automated notification systems, log translation tools, and permission security updates across internal platforms."
+highlights = [
+  "Implemented automated Internship Completion Alert system with custom SQL & HTML templates",
+  "Built Portal Reply Banner system for automated email notifications",
+  "Documented and tested system permission updates (ORDR:ECS) for access control security"
+]
+
+[[projects]]
+name = "GitLab Sync Action"
+description = "Custom automation tool built with GitLab API to sync issue data, titles, and descriptions into internal systems seamlessly."
+tags = ["JavaScript", "GitLab API", "Automation"]
+link = "https://github.com"
+
+[[projects]]
+name = "Config-Driven Portfolio Engine"
+description = "Headless, TOML-powered portfolio template engine built with Astro and TypeScript."
+tags = ["Astro", "TypeScript", "TOML"]
+link = "https://github.com"
+
+[contact]
+email = "hazmi.badrunsham@gmail.com"
+
+[[contact.socials]]
+name = "GitHub"
+url = "https://github.com"
+
+[[contact.socials]]
+name = "LinkedIn"
+url = "https://linkedin.com"
+</file>
+
+<file path="src/pages/index.astro">
+---
+import { getPortfolioData, getThemeConfig, getSiteConfig, getBlogPosts, type BlogPost } from '../lib/config';
+import { generateCssVariables, resolveFontSelection, googleFontCssUrl } from '../lib/tokens';
+import { TEMPLATES } from '../lib/template';
+import { analyticsScript } from '../lib/analytics';
+import { localeLabel } from '../lib/i18n';
+import type { TemplateKey } from '../lib/template';
+import '../styles/reset.css';
+import '../styles/global.css';
+import Container from '../components/ui/Container.astro';
+
+const portfolio = getPortfolioData();
+const theme = getThemeConfig();
+const site = getSiteConfig();
+
+const cssVariables = generateCssVariables(theme);
+const { googleFonts } = resolveFontSelection(theme);
+
+// Fallback to 'minimal' if requested template is invalid
+const templateKey = (site.template in TEMPLATES ? site.template : 'minimal') as TemplateKey;
+const SelectedTemplate = TEMPLATES[templateKey];
+
+// --- Optional features (gated; absent config => no effect) ---
+const analytics = site.analytics;
+const seo = site.seo;
+const i18n = site.i18n;
+const blog = site.blog;
+
+// Blog section renders only when enabled, there are posts, AND 'blog' is in the
+// section order. If enabled but no posts / collection empty, nothing renders here
+// and the dedicated /blog/ page also returns early.
+const blogEnabled =
+  blog?.enabled &&
+  site.sections.includes('blog') &&
+  (await getBlogPosts()) !== undefined;
+
+// When `generateOgImage` is true we link to the static OG image generated at
+// build time by the ogIntegration. The file is written to public/og-image.png
+// (and removed when the flag is off), so builds without it stay cheap.
+const ogImageUrl = seo?.generateOgImage ? '/og-image.png' : undefined;
+---
+
+<!DOCTYPE html>
+<html lang={site.language}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{portfolio.site.name}</title>
+
+    {/* ---------- Required meta ---------- */}
+    <meta name="description" content={portfolio.site.bio} />
+    {seo?.siteName ? (
+      <meta property="og:site_name" content={seo.siteName} />
+    ) : null}
+    <meta property="og:title" content={portfolio.site.name} />
+    <meta property="og:description" content={portfolio.site.bio} />
+    <meta property="og:type" content="website" />
+    {seo?.generateOgImage && ogImageUrl ? (
+      <meta property="og:image" content={ogImageUrl} />
+    ) : null}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {/* ---------- Analytics (opt-in) ---------- */}
+    {analyticsScript(analytics.provider, analytics.domain, analytics.scriptUrl)}
+
+    {/* ---------- Google Fonts (already existed) ---------- */}
+    {googleFonts.heading || googleFonts.body ? (
+      <>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      </>
+    ) : null}
+    {googleFonts.heading ? (
+      <link href={googleFontCssUrl(googleFonts.heading)} rel="stylesheet" />
+    ) : null}
+    {googleFonts.body && googleFonts.body !== googleFonts.heading ? (
+      <link href={googleFontCssUrl(googleFonts.body)} rel="stylesheet" />
+    ) : null}
+
+    <style set:html={`:root { ${cssVariables} }`}></style>
+  </head>
+  <body>
+    <SelectedTemplate data={portfolio} sections={site.sections} />
+
+    {/* ---------- i18n language picker (opt-in) ---------- */}
+    {i18n?.locales && i18n.locales.length > 1 && (
+      <nav aria-label={i18n.pickerLabel ?? 'Language'}>
+        <span aria-hidden="true">{i18n.pickerLabel ?? 'Language'}:</span>{' '}
+        {i18n.locales.map((lang) => (
+          <a
+            href={`/?lang=${lang}`}
+            aria-current={lang === site.language ? 'true' : undefined}
+          >
+            {localeLabel(lang)}
+          </a>
+        ))}
+      </nav>
+    )}
+
+    {/* ---------- Optional Blog section (reuses UI components) ---------- */}
+    {blogEnabled && (
+      <section class="blog-section" id="blog">
+        <Container>
+          <h2>
+            {blog?.title ?? `${portfolio.site.name} Blog`}
+          </h2>
+          {blog?.description && <p>{blog.description}</p>}
+          {((await getBlogPosts()) ?? [])
+            .filter((p) => p.data.published !== false)
+            .slice(0, blog?.postsPerPage ?? 10)
+            .map((post) => (
+              <article>
+                <h3>
+                  <a href={`/blog/${post.id.split('/').pop()!.replace(/\.md$/, '')}/`}>{post.data.title}</a>
+                </h3>
+                {post.data.description && <p>{post.data.description}</p>}
+                {post.data.tags && post.data.tags.length > 0 && (
+                  <div>
+                    {post.data.tags.map((t) => (
+                      <span class="ui-tag">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </article>
+            ))}
+          <a href="/blog/">View all posts</a>
+          <style>
+            .blog-section {
+              margin-top: var(--spacing-section);
+            }
+            .blog-section article {
+              padding: var(--spacing-gap);
+              border-top: var(--border-width) solid var(--color-border);
+            }
+            .blog-section h3 {
+              margin: 0 0 0.25rem;
+            }
+            .blog-section h3 a {
+              text-decoration: none;
+              color: var(--color-foreground);
+            }
+            .blog-section h3 a:hover {
+              text-decoration: underline;
+            }
+            .blog-section a[href$='/blog/'] {
+              margin-top: var(--spacing-gap);
+              display: inline-block;
+            }
+          </style>
+        </Container>
+      </section>
+    )}
+  </body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "astro-toml-portfolio",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "create": "node scripts/create-toml-portfolio.mjs",
+    "previews": "node scripts/generate-previews.mjs"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "astro": "^7.2.10",
+    "sharp": "^0.33.5",
+    "zod": "^4.5.4"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/iarna__toml": "^2.0.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}
+</file>
+
+<file path="README.md">
+# ⚡ TOML-Powered Astro Portfolio Engine
+
+A headless, zero-code portfolio engine built with **Astro**, **TypeScript**, and **TOML**. Manage your content, design tokens, and templates purely through configuration files.
+
+## Quick Start
+
+1. **Install dependencies:**
+  ```bash
+   npm install
+   ```
+2. **Start dev server:**
+  ```bash
+   npm run dev
+   ```
+3. **Build for production:**
+  ```bash
+   npm run build
+  ```
+
+## Configuration
+
+All content lives in three TOML files under `src/config/`. You never need to touch code to customize your site.
+
+> **Developer tooling:** the full check pipeline is one command —
+> `npm run check` (type-check) → `npm run test:run` (tests) → `npm run build`.
+> CI runs all three on every push/PR (see [Continuous integration](#continuous-integration)).
+
+### `src/config/site.toml` — Site & page structure
+
+- `template` — Active template key: `"minimal"`, `"dark-japanese"`, `"khakis-90s"`, `"bento-grid"`, `"terminal"`, or `"editorial"` (default: `"minimal"`). Any unknown value falls back to `minimal`. See [Templates](#templates) for the full catalog.
+- `title` — Site title.
+- `language` — `<html lang>` attribute (default: `"en"`).
+- `sections` — *(optional)* Ordered list of sections to display:
+  ```toml
+  sections = ["hero", "about", "projects", "skills", "experience", "contact"]
+  ```
+  - **Valid names:** `hero`, `about`, `skills`, `experience`, `projects`, `contact`. Any other name causes a clear validation error at build time.
+  - **Default** (when the key is omitted): `["hero", "about", "skills", "experience", "projects", "contact"]` — the original rendering order, so existing configs keep working unchanged.
+  - **Reorder** sections by changing the order of the entries.
+  - **Hide** a section by leaving it out of the array (e.g. drop `"contact"`).
+
+### `src/config/theme.toml` — Design tokens
+
+Every key maps to a CSS custom property on `:root` (`--color-*`, `--font-*`, `--spacing-*`, `--border-*`, `--panel-shadow`, `--radius-*`, `--letter-spacing-*`, `--transition-*`). Templates only ever consume these tokens.
+
+- `[colors]` — `background`, `surface`, `foreground`, `muted`, `accent`, `border`; optional: `surface_hover`, `accent_muted`, `selection`.
+- `[fonts]` — Typography tokens:
+  - `heading` / `body` — each value is **either**:
+    1. **A Google Fonts family name** — e.g. `heading = "Space Grotesk"`. The engine injects the Google Fonts `<link>` tags into `<head>` automatically and maps it to `--font-heading` with a system fallback.
+    2. **A full comma-separated CSS font stack** — e.g. `heading = "Inter, system-ui, sans-serif"`. Used as-is, no external request.
+    If omitted, the fallback `system-ui, -apple-system, sans-serif` is used.
+  - `heading_weight` (default `"700"`) → `--font-weight-heading`
+  - `body_weight` (default `"400"`) → `--font-weight-body`
+  - `heading_letter_spacing` (default `"normal"`) → `--letter-spacing-heading`
+  - `body_letter_spacing` (default `"normal"`) → `--letter-spacing-body`
+- `[spacing]` — `section`, `container`, `gap` (`--spacing-section`, `--spacing-container`, `--spacing-gap`).
+- `[layout]` — `max_width` (`--layout-max-width`).
+- `[style]` — `border_width` (`--border-width`), `border_radius` (`--border-radius`), `panel_shadow` (`--panel-shadow`), plus finer radii: `radius_sm` (default `"4px"`) → `--radius-sm`, `radius_md` (default `"8px"`) → `--radius-md`, `radius_lg` (default `"16px"`) → `--radius-lg`.
+- `[motion]` — *(new table)* `duration` (default `"200ms"`) → `--transition-duration`, `easing` (default `"ease-out"`) → `--transition-easing`.
+
+*Example — switch to Google Fonts with a single edit:*
+```toml
+[fonts]
+heading = "Space Grotesk"
+body = "Inter"
+```
+
+### `src/config/portfolio.toml` — Content
+
+Your personal info, projects, skills, experience, and contact details — `[site]`, `[about]`, `[[skills]]`, `[[experience]]`, `[[projects]]`, `[contact]` with `[[contact.socials]]`.
+
+## Templates
+
+Templates live in `src/templates/<key>/` and are **auto-registered** by `src/lib/template.ts` from the folder name (via `import.meta.glob`) — dropping in a new folder is all it takes. Each template ships with:
+
+- `<Key>Layout.astro` — the layout, iterating the configured `sections` via the shared `SECTION_COMPONENTS` map;
+- `styles.css` — template styling, consuming **only** the design tokens;
+- `template.json` — metadata consumed by the gallery and `getTemplateMetadata()`:
+
+  ```json
+  {
+    "name": "Bento Grid",
+    "author": "you",
+    "description": "Card-based dashboard-style layout",
+    "previewImage": "/template-previews/bento-grid.png"
+  }
+  ```
+
+### Template catalog
+
+| Key | Name | Description |
+| --- | --- | --- |
+| `minimal` | Minimal | Clean single-column layout with subtle surfaces and rounded cards. |
+| `dark-japanese` | Dark Japanese | Ink-and-paper aesthetic with a vertical accent frame and hanko seal. |
+| `khakis-90s` | Khakis 90s | Vintage catalog cards with offset hard shadows and a retro stamp. |
+| `bento-grid` | Bento Grid | Card-based dashboard layout with sections as bento tiles. |
+| `terminal` | Terminal | Monospace terminal-window chrome with a blinking-cursor accent. |
+| `editorial` | Editorial | Newspaper/magazine style with multi-column About and Experience. |
+
+### Template previews
+
+Every `template.json` points at `/template-previews/<key>.png` (served from `public/template-previews/`). The repository includes deterministic wireframe stand-ins generated by:
+
+```bash
+node scripts/generate-previews.mjs
+```
+
+Replace any `<key>.png` with a real screenshot whenever one is available — nothing else needs to change.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push/PR to `master`:
+
+1. `npm ci` — clean dependency install (fresh-clone safe);
+2. `npm run check` — `astro check` type-check; fails on any type **error**;
+3. `npm run test:run` — Vitest suite for the TOML schema layer;
+4. `npm run build` — full static site build.
+
+Any step failing fails the pipeline.
+
+## Scaffold a new site (create-toml-portfolio)
+
+`scripts/create-toml-portfolio.mjs` scaffolds a fresh zero-code portfolio from
+this repo's current files (excluding `node_modules`, `.git`, and `dist`).
+It will be packaged as the standalone `create-toml-portfolio` npm package later.
+
+```bash
+node scripts/create-toml-portfolio.mjs my-site
+# or: npm run create -- my-site
+```
+
+The script copies the repo, prompts for the **site name** and **starting
+template**, writes both into `src/config/site.toml`, and prints the next steps:
+
+```bash
+cd my-site
+npm install
+npm run dev
+```
+
+## Feeding Repo Context to AI (using Repomix)
+To package your entire codebase into a single AI-friendly context file:
+
+1. **Pack the repository:**
+  ```bash
+   npx repomix
+   ```
+2. Feed the generated repomix-output.xml (or .txt) file directly to your AI tool (ChatGPT, Claude, Gemini).
+
+## How to Create a New Template
+
+### Method A: Using AI (Recommended)
+
+Copy and paste this prompt into an AI assistant alongside your repo context:
+```text
+Act as an Astro frontend developer. Build a new template for my portfolio engine called "[TEMPLATE_NAME]".
+
+RULES TO FOLLOW:
+1. Create `src/templates/[TEMPLATE_NAME]/[Name]Layout.astro` and `src/templates/[TEMPLATE_NAME]/styles.css`.
+2. Do NOT touch portfolio data or rewrite section components. Reuse `Hero`, `About`, `Skills`, `Experience`, `Projects`, and `Contact` from `../../components/sections/` via the shared map in `src/lib/sections.ts` (`SECTION_COMPONENTS` + `getSectionData`).
+3. Your layout receives two props: `data` (the full portfolio) and `sections` (an ordered array of section names from `site.toml`). Iterate `sections` and render each with the matching entry from `SECTION_COMPONENTS`, wrapped in your template's own markup — never hardcode the section list.
+4. Do NOT hardcode colors, padding, borders, or fonts. Rely strictly on CSS custom properties generated from `src/lib/tokens.ts`:
+   - `--color-background`, `--color-surface`, `--color-foreground`, `--color-muted`, `--color-accent`, `--color-border`
+   - `--font-heading`, `--font-body`, `--font-weight-heading`, `--font-weight-body`
+   - `--letter-spacing-heading`, `--letter-spacing-body`
+   - `--spacing-section`, `--spacing-container`, `--spacing-gap`
+   - `--border-width`, `--border-radius`, `--radius-sm`, `--radius-md`, `--radius-lg`, `--panel-shadow`
+   - `--transition-duration`, `--transition-easing`
+5. Apply the requested aesthetic ([e.g. Bento grid layout / Terminal style / Editorial newspaper style]) strictly inside `styles.css` using parent layout wrappers.
+6. Add a `template.json` next to the layout/styles with `name`, `author`, `description`, and `previewImage` pointing at `/template-previews/<key>.png` (run `node scripts/generate-previews.mjs` to regenerate the placeholder wireframes).
+7. No manual registration needed — `import.meta.glob` in `src/lib/template.ts` auto-discovers the folder (the folder name becomes the template key).
+```
+### Method B: Manual Creation
+1. Duplicate reference folder:
+
+```Bash
+cp -r src/templates/minimal src/templates/my-new-template
+```
+2. **Rename layout file**:
+Rename src/templates/my-new-template/MinimalLayout.astro to MyNewTemplateLayout.astro.
+
+3. **Customize CSS & Layout**:
+Modify structural wrappers or CSS in styles.css. Keep CSS custom properties intact!
+
+4. **Auto-Discovery**:
+If you implemented import.meta.glob in src/lib/template.ts, templates auto-register based on folder name. Otherwise, manually import and add your key inside src/lib/template.ts.
+
+5. **Activate Template**:
+Set template = "my-new-template" inside src/config/site.toml.
+</file>
+
+</files>

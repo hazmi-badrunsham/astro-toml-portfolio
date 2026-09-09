@@ -1,19 +1,29 @@
 ---
 import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
 import Container from '../../components/ui/Container.astro';
-import Hero from '../../components/sections/Hero.astro';
-import About from '../../components/sections/About.astro';
-import Skills from '../../components/sections/Skills.astro';
-import Experience from '../../components/sections/Experience.astro';
-import Projects from '../../components/sections/Projects.astro';
-import Contact from '../../components/sections/Contact.astro';
 import './styles.css';
 
 interface Props {
   data: PortfolioData;
+  sections: readonly SectionName[];
 }
 
-const { data } = Astro.props;
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  name,
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+
+// When the configured order starts with hero, keep the original composition:
+// hero in its own bordered header, the rest stacked inside <main>.
+const IsHeroFirst = RenderList[0]?.name === 'hero';
+const HeroSection = IsHeroFirst ? RenderList[0].Section : undefined;
+const HeroData = IsHeroFirst ? RenderList[0].data : undefined;
+const Stack = IsHeroFirst ? RenderList.slice(1) : RenderList;
 ---
 
 <div class="japanese-layout">
@@ -22,30 +32,22 @@ const { data } = Astro.props;
 
   <Container>
     <div class="japanese-frame">
-      <header class="japanese-hero-wrapper">
-        <Hero data={data.site} />
-      </header>
+      {HeroSection && (
+        <header class="japanese-hero-wrapper">
+          <HeroSection data={HeroData} />
+        </header>
+      )}
 
       <main class="japanese-main">
-        <div class="japanese-section-wrapper">
-          <About data={data.about} />
-        </div>
-
-        <div class="japanese-section-wrapper">
-          <Skills data={data.skills} />
-        </div>
-
-        <div class="japanese-section-wrapper">
-          <Experience data={data.experience} />
-        </div>
-
-        <div class="japanese-section-wrapper">
-          <Projects data={data.projects} />
-        </div>
-
-        <div class="japanese-section-wrapper">
-          <Contact data={data.contact} />
-        </div>
+        {Stack.map(({ name, Section, data: sectionData }) => (
+          <div
+            class={name === 'hero'
+              ? 'japanese-hero-wrapper'
+              : 'japanese-section-wrapper'}
+          >
+            <Section data={sectionData} />
+          </div>
+        ))}
       </main>
     </div>
   </Container>

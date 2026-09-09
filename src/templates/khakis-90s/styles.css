@@ -54,7 +54,9 @@
   border-radius: var(--border-radius);
   padding: var(--spacing-container);
   box-shadow: var(--panel-shadow, 4px 4px 0px var(--color-border));
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-duration) var(--transition-easing),
+    box-shadow var(--transition-duration) var(--transition-easing);
 }
 
 .retro-card:hover {

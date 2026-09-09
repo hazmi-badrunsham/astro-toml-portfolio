@@ -18,32 +18,36 @@ const RenderList = sections.map((name) => ({
   data: getSectionData(data, name),
 }));
 
-// Keep the hero in its highlighted catalog card when it leads the order.
+// When the configured order starts with hero, use it as the masthead headline.
 const IsHeroFirst = RenderList[0]?.name === 'hero';
 const HeroSection = IsHeroFirst ? RenderList[0].Section : undefined;
 const HeroData = IsHeroFirst ? RenderList[0].data : undefined;
 const Stack = IsHeroFirst ? RenderList.slice(1) : RenderList;
 ---
 
-<div class="khakis-retro-layout">
+<div class="editorial-layout">
   <Container>
-    <div class="vintage-paper-container">
-      <!-- 90s Catalog Header Stamp -->
-      <div class="retro-badge" aria-hidden="true">
-        EST. 1990 • CLASSIC EDITION
+    <div class="editorial-page">
+      <div class="editorial-dateline" aria-hidden="true">
+        {data.site.title} &mdash; Portfolio Edition &mdash; Vol. I
       </div>
 
-      {HeroSection && (
-        <header class="retro-hero-card">
+      <header class="editorial-masthead">
+        {HeroSection ? (
           <HeroSection data={HeroData} />
-        </header>
-      )}
+        ) : (
+          <>
+            <h1 class="editorial-masthead-name">{data.site.name}</h1>
+            <p class="editorial-masthead-subtitle">{data.site.title}</p>
+          </>
+        )}
+      </header>
 
-      <main class="retro-main-stack">
+      <main class="editorial-main">
         {Stack.map(({ name, Section, data: sectionData }) => (
-          <section class="retro-card">
+          <div class={`editorial-block editorial-block-${name}`}>
             <Section data={sectionData} />
-          </section>
+          </div>
         ))}
       </main>
     </div>

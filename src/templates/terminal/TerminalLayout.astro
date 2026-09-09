@@ -1,0 +1,68 @@
+---
+import type { PortfolioData } from '../../types/portfolio';
+import type { SectionName } from '../../lib/schema';
+import { SECTION_COMPONENTS, getSectionData } from '../../lib/sections';
+import Container from '../../components/ui/Container.astro';
+import './styles.css';
+
+interface Props {
+  data: PortfolioData;
+  sections: readonly SectionName[];
+}
+
+const { data, sections } = Astro.props;
+
+const RenderList = sections.map((name) => ({
+  name,
+  Section: SECTION_COMPONENTS[name],
+  data: getSectionData(data, name),
+}));
+
+const USER = data.site.name.trim().split(/\s+/)[0]?.toLowerCase() || 'user';
+const DIR = `~/${data.site.name.toLowerCase().replace(/\s+/g, '-')}`;
+const PROMPT = `${USER}@portfolio:~$`;
+
+const COMMANDS: Record<SectionName, string> = {
+  hero: './portfolio --whoami',
+  about: 'cat about.md',
+  skills: 'skills --list',
+  experience: 'cat experience.log',
+  projects: 'ls -la ./projects',
+  contact: 'cat contact.txt',
+  blog: 'cat blog/index.md',
+};
+---
+
+<div class="terminal-layout">
+  <Container>
+    <div class="terminal-window">
+      <div class="terminal-titlebar" aria-hidden="true">
+        <div class="terminal-dots">
+          <span class="terminal-dot terminal-dot-close"></span>
+          <span class="terminal-dot terminal-dot-minimize"></span>
+          <span class="terminal-dot terminal-dot-maximize"></span>
+        </div>
+        <div class="terminal-title">{DIR} — bash</div>
+      </div>
+
+      <div class="terminal-body">
+        {RenderList.map(({ name, Section, data: sectionData }) => (
+          <div class="terminal-session">
+            <div class="terminal-commandline" role="presentation">
+              <span class="terminal-prompt">{PROMPT}</span>
+              <span class="terminal-command">{COMMANDS[name]}</span>
+            </div>
+            <div class="terminal-output">
+              <Section data={sectionData} />
+            </div>
+          </div>
+        ))}
+
+        <div class="terminal-commandline" aria-hidden="true">
+          <span class="terminal-prompt">{PROMPT}</span>
+          <span class="terminal-cursor">▊</span>
+        </div>
+      </div>
+    </div>
+  </Container>
+</div>

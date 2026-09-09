@@ -43,7 +43,7 @@ tags = ["Astro", "TypeScript", "TOML"]
 link = "https://github.com"
 
 [contact]
-email = "hazmi@example.com"
+email = "hazmi.badrunsham@gmail.com"
 
 [[contact.socials]]
 name = "GitHub"

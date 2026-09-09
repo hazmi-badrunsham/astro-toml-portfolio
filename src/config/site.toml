@@ -1,3 +1,7 @@
-template = "khakis-90s"
-title = "Hazmi — Application Support"
+template = "dark-japanese"
+title = "Hazmi"
 language = "en"
+
+# Optional. Order controls render order; omissions hide a section.
+# Valid names: hero, about, skills, experience, projects, contact
+sections = ["hero","about","skills","experience","projects","contact"]

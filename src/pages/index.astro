@@ -1,20 +1,43 @@
 ---
-import { getPortfolioData, getThemeConfig, getSiteConfig } from '../lib/config';
-import { generateCssVariables } from '../lib/tokens';
+import { getPortfolioData, getThemeConfig, getSiteConfig, getBlogPosts, type BlogPost } from '../lib/config';
+import { generateCssVariables, resolveFontSelection, googleFontCssUrl } from '../lib/tokens';
 import { TEMPLATES } from '../lib/template';
+import { analyticsScript } from '../lib/analytics';
+import { localeLabel } from '../lib/i18n';
 import type { TemplateKey } from '../lib/template';
 import '../styles/reset.css';
 import '../styles/global.css';
+import Container from '../components/ui/Container.astro';
 
 const portfolio = getPortfolioData();
 const theme = getThemeConfig();
 const site = getSiteConfig();
 
 const cssVariables = generateCssVariables(theme);
+const { googleFonts } = resolveFontSelection(theme);
 
 // Fallback to 'minimal' if requested template is invalid
 const templateKey = (site.template in TEMPLATES ? site.template : 'minimal') as TemplateKey;
 const SelectedTemplate = TEMPLATES[templateKey];
+
+// --- Optional features (gated; absent config => no effect) ---
+const analytics = site.analytics;
+const seo = site.seo;
+const i18n = site.i18n;
+const blog = site.blog;
+
+// Blog section renders only when enabled, there are posts, AND 'blog' is in the
+// section order. If enabled but no posts / collection empty, nothing renders here
+// and the dedicated /blog/ page also returns early.
+const blogEnabled =
+  blog?.enabled &&
+  site.sections.includes('blog') &&
+  (await getBlogPosts()) !== undefined;
+
+// When `generateOgImage` is true we link to the static OG image generated at
+// build time by the ogIntegration. The file is written to public/og-image.png
+// (and removed when the flag is off), so builds without it stay cheap.
+const ogImageUrl = seo?.generateOgImage ? '/og-image.png' : undefined;
 ---
 
 <!DOCTYPE html>
@@ -22,10 +45,110 @@ const SelectedTemplate = TEMPLATES[templateKey];
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{portfolio.site.name} — {portfolio.site.title}</title>
+    <title>{portfolio.site.name}</title>
+
+    {/* ---------- Required meta ---------- */}
+    <meta name="description" content={portfolio.site.bio} />
+    {seo?.siteName ? (
+      <meta property="og:site_name" content={seo.siteName} />
+    ) : null}
+    <meta property="og:title" content={portfolio.site.name} />
+    <meta property="og:description" content={portfolio.site.bio} />
+    <meta property="og:type" content="website" />
+    {seo?.generateOgImage && ogImageUrl ? (
+      <meta property="og:image" content={ogImageUrl} />
+    ) : null}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {/* ---------- Analytics (opt-in) ---------- */}
+    {analyticsScript(analytics.provider, analytics.domain, analytics.scriptUrl)}
+
+    {/* ---------- Google Fonts (already existed) ---------- */}
+    {googleFonts.heading || googleFonts.body ? (
+      <>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      </>
+    ) : null}
+    {googleFonts.heading ? (
+      <link href={googleFontCssUrl(googleFonts.heading)} rel="stylesheet" />
+    ) : null}
+    {googleFonts.body && googleFonts.body !== googleFonts.heading ? (
+      <link href={googleFontCssUrl(googleFonts.body)} rel="stylesheet" />
+    ) : null}
+
     <style set:html={`:root { ${cssVariables} }`}></style>
   </head>
   <body>
-    <SelectedTemplate data={portfolio} />
+    <SelectedTemplate data={portfolio} sections={site.sections} />
+
+    {/* ---------- i18n language picker (opt-in) ---------- */}
+    {i18n?.locales && i18n.locales.length > 1 && (
+      <nav aria-label={i18n.pickerLabel ?? 'Language'}>
+        <span aria-hidden="true">{i18n.pickerLabel ?? 'Language'}:</span>{' '}
+        {i18n.locales.map((lang) => (
+          <a
+            href={`/?lang=${lang}`}
+            aria-current={lang === site.language ? 'true' : undefined}
+          >
+            {localeLabel(lang)}
+          </a>
+        ))}
+      </nav>
+    )}
+
+    {/* ---------- Optional Blog section (reuses UI components) ---------- */}
+    {blogEnabled && (
+      <section class="blog-section" id="blog">
+        <Container>
+          <h2>
+            {blog?.title ?? `${portfolio.site.name} Blog`}
+          </h2>
+          {blog?.description && <p>{blog.description}</p>}
+          {((await getBlogPosts()) ?? [])
+            .filter((p) => p.data.published !== false)
+            .slice(0, blog?.postsPerPage ?? 10)
+            .map((post) => (
+              <article>
+                <h3>
+                  <a href={`/blog/${post.id.split('/').pop()!.replace(/\.md$/, '')}/`}>{post.data.title}</a>
+                </h3>
+                {post.data.description && <p>{post.data.description}</p>}
+                {post.data.tags && post.data.tags.length > 0 && (
+                  <div>
+                    {post.data.tags.map((t) => (
+                      <span class="ui-tag">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </article>
+            ))}
+          <a href="/blog/">View all posts</a>
+          <style>
+            .blog-section {
+              margin-top: var(--spacing-section);
+            }
+            .blog-section article {
+              padding: var(--spacing-gap);
+              border-top: var(--border-width) solid var(--color-border);
+            }
+            .blog-section h3 {
+              margin: 0 0 0.25rem;
+            }
+            .blog-section h3 a {
+              text-decoration: none;
+              color: var(--color-foreground);
+            }
+            .blog-section h3 a:hover {
+              text-decoration: underline;
+            }
+            .blog-section a[href$='/blog/'] {
+              margin-top: var(--spacing-gap);
+              display: inline-block;
+            }
+          </style>
+        </Container>
+      </section>
+    )}
   </body>
 </html>
